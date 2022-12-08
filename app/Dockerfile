@@ -8,4 +8,4 @@ EXPOSE 8000:8000
 
 RUN pip install -r /app/requirements.txt
 
-CMD [ "uvicorn", "app:app", "--host", "0.0.0.0", "--reload" ]
+CMD [ "python", "main.py" ]
