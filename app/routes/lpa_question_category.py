@@ -17,6 +17,15 @@ def get_question_categories():
 
     return question_categories
 
+@router.get("/question_category/{id}")
+def get_question_categories(id):
+    with dbm.create_session() as session:
+        question_categorie = session.query(LPAQuestionCategory).get(id)
+        if question_categorie is None:
+            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+
+    return question_categorie
+
 @router.post("/question_category")
 def create_question_category(question_category: QuestionCategory):
     with dbm.create_session() as session:
