@@ -6,6 +6,7 @@ from routes.lpa_question_category import router as lpa_question_category_router
 app = FastAPI()
 app.include_router(lpa_question_category_router)
 
+@app.get("/")
 @app.get("/healthcheck")
 def healthcheck():
     return { "Status": "Up" }
