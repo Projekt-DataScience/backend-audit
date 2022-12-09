@@ -1,4 +1,4 @@
-# backend-audit
+# LPA Audit Service
 
 This repository contains the code for the serivce to handle everything related to LPA Audits.
 
