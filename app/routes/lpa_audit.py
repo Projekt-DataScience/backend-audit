@@ -1,5 +1,7 @@
 import random
 
+from datetime import datetime 
+
 from fastapi import APIRouter, HTTPException
 
 from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation
@@ -23,7 +25,7 @@ def get_all_audits():
     return audits
 
 @router.get("/{id}")
-def get_audit(id):
+def get_audit(id: int):
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
     
@@ -31,6 +33,36 @@ def get_audit(id):
         raise HTTPException(status_code=404, detail="Audit not found")
 
     return audit
+
+@router.get("/open/{id}")
+def get_audits_of_user(id: int):
+    with dbm.create_session() as session:
+        user = session.query(User).get(id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        layer_id = user.layer_id
+        group_id = user.group_id
+
+        if (layer_id is not None) and (group_id is not None):
+            audits = session.query(LPAAudit).filter_by(
+                assigned_group_id = group_id,
+                assigned_layer_id = layer_id,
+            )
+        elif layer_id is None:
+            audits = session.query(LPAAudit).filter_by(
+                assigned_group_id = group_id,
+            )
+        elif group_id is None:
+            audits = session.query(LPAAudit).filter_by(
+                assigned_layer_id = layer_id,
+            )
+
+        audits = audits.filter(
+            LPAAudit.due_date >= datetime.now()
+        )
+
+        return audits.all()
 
 @router.post("/")
 def create_spontanous_lpa_audit(audit: SpontanousAudit):   
@@ -140,7 +172,6 @@ def update_audit(audit: UpdateAuditDAO, id):
     session.refresh(a)
 
     return a
-
 
 @router.post("/delete/{id}")
 def delete_audit(id: int):
