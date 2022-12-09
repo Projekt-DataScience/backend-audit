@@ -50,7 +50,7 @@ def update_question_category(question_category: QuestionCategory, id):
     return c
 
 @router.post("/question_category/delete/{id}")
-def update_question_category(id):
+def delete_question_category(id):
     with dbm.create_session() as session:
         c = session.query(LPAQuestionCategory).get(id)
         
