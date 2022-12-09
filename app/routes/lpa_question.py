@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAQuestion, LPAQuestionCategory
+from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group
 from dao.lpa_question import LPAQuestionDAO
 from db import dbm
 
@@ -34,10 +34,20 @@ def create_lpa_question(lpa_question: LPAQuestionDAO):
         if category is None:
             raise HTTPException(status_code=404, detail="LPA Question Category not found")
 
+        layer = session.query(Layer).get(lpa_question.layer_id)
+        if layer is None:
+            raise HTTPException(status_code=404, detail="Layer not found")
+
+        group = session.query(Group).get(lpa_question.group_id)
+        if group is None:
+            raise HTTPException(status_code=404, detail="Group not found")
+
         question = LPAQuestion(
             question=lpa_question.question,
             description=lpa_question.description,
-            category_id=lpa_question.category_id
+            category_id=lpa_question.category_id,
+            layer_id=lpa_question.layer_id,
+            group_id=lpa_question.group_id
         )
 
         session.add(question)
@@ -58,9 +68,19 @@ def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
         if question is None:
             raise HTTPException(status_code=404, detail="LPA Question not found")
 
+        layer = session.query(Layer).get(lpa_question.layer_id)
+        if layer is None:
+            raise HTTPException(status_code=404, detail="Layer not found")
+
+        group = session.query(Group).get(lpa_question.group_id)
+        if group is None:
+            raise HTTPException(status_code=404, detail="Group not found")
+
         question.question = lpa_question.question,
         question.description = lpa_question.description,
         question.category_id = lpa_question.category_id
+        question.layer_id = lpa_question.layer_id
+        question.group_id = lpa_question.group_id
 
         session.add(question)
         session.flush()
