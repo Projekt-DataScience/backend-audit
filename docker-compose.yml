@@ -8,3 +8,9 @@ services:
       - ./app:/app
     ports:
       - 8000:8000
+    networks:
+      - microservice-network
+
+networks:
+  microservice-network:
+    external: true
