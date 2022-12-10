@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation
+from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration
 from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date
@@ -64,7 +64,7 @@ def get_audits_of_user(id: int):
 
         return audits.all()
 
-@router.post("/")
+@router.post("")
 def create_spontanous_lpa_audit(audit: SpontanousAudit):   
     with dbm.create_session() as session:
         auditor = session.query(User).get(audit.auditor)
