@@ -1,13 +1,22 @@
-from datetime import datetime, date, timedelta
+"""
+This script will trigger the endpoint for generating recurrent audits.
+It will be called by a cronjob every day at 00:00 inside the docker container.
+"""
 
-from backend_db_lib.models import base
+import requests
+import random
+from datetime import datetime, timedelta
+
+from backend_db_lib.models import LPAAuditRecurrence, LPAAudit, LPAQuestion, AuditQuestionAssociation, base
 from backend_db_lib.manager import DatabaseManager
 
-from settings import settings
-
-DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOSTNAME}:{settings.DB_PORT}/{settings.DB_NAME}"
+DATABASE_URL = "postgresql://backendgang:backendgang@db:8010/backend"
 
 dbm = DatabaseManager(base, DATABASE_URL)
+
+#URL = "http://127.0.0.1:8000/planned/generate_recurrent_audits"
+#response = requests.get(URL)
+#print(response.json())
 
 class WEEKLY_TYPES:
     MONDAY = "monday"
@@ -165,61 +174,6 @@ def backend_to_frontend_recurrence_value(type, value):
 
     return []
 
-
-def frontend_recurrence_value_to_backend_recurrence_value(type, values):
-    value = 0
-    if type == RECURRENCE_TYPES.WEEKLY:
-        for day in values:
-            if day == WEEKLY_TYPES.MONDAY:
-                value += WEEKLY_VALUES.MONDAY
-            elif day == WEEKLY_TYPES.TUESDAY:
-                value += WEEKLY_VALUES.TUESDAY
-            elif day == WEEKLY_TYPES.WEDNESDAY:
-                value += WEEKLY_VALUES.WEDNESDAY
-            elif day == WEEKLY_TYPES.THURSDAY:
-                value += WEEKLY_VALUES.THURSDAY
-            elif day == WEEKLY_TYPES.FRIDAY:
-                value += WEEKLY_VALUES.FRIDAY
-            elif day == WEEKLY_TYPES.SATURDAY:
-                value += WEEKLY_VALUES.SATURDAY
-            elif day == WEEKLY_TYPES.SUNDAY:
-                value += WEEKLY_VALUES.SUNDAY
-
-    elif type == RECURRENCE_TYPES.MONTHLY:
-        for day in values:
-            d = int(day)
-            value += MONTH_VALUES[d - 1]
-
-    elif type == RECURRENCE_TYPES.YEARLY:
-        for month in values:
-            if month == YEARLY_TYPES.JANUARY:
-                value += YEARLY_VALUES.JANUARY
-            elif month == YEARLY_TYPES.FEBRUARY:
-                value += YEARLY_VALUES.FEBRUARY
-            elif month == YEARLY_TYPES.MARCH:
-                value += YEARLY_VALUES.MARCH
-            elif month == YEARLY_TYPES.APRIL:
-                value += YEARLY_VALUES.APRIL
-            elif month == YEARLY_TYPES.MAY:
-                value += YEARLY_VALUES.MAY
-            elif month == YEARLY_TYPES.JUNE:
-                value += YEARLY_VALUES.JUNE
-            elif month == YEARLY_TYPES.JULY:
-                value += YEARLY_VALUES.JULY
-            elif month == YEARLY_TYPES.AUGUST:
-                value += YEARLY_VALUES.AUGUST
-            elif month == YEARLY_TYPES.SEPTEMBER:
-                value += YEARLY_VALUES.SEPTEMBER
-            elif month == YEARLY_TYPES.OCTOBER:
-                value += YEARLY_VALUES.OCTOBER
-            elif month == YEARLY_TYPES.NOVEMBER:
-                value += YEARLY_VALUES.NOVEMBER
-            elif month == YEARLY_TYPES.DECEMBER:
-                value += YEARLY_VALUES.DECEMBER
-
-    return value
-
-
 def reccurrence_value_to_date(type, value):
     now = datetime.now()
     dates = []
@@ -255,7 +209,7 @@ def reccurrence_value_to_date(type, value):
             d = d.replace(minute=0)
             d = d.replace(second=0)
             d = d.replace(microsecond=0)
-
+            
             if d >= now:
                 dates.append(d)
 
@@ -273,3 +227,49 @@ def reccurrence_value_to_date(type, value):
                 dates.append(d)
 
     return dates
+
+created_audits = []
+with dbm.create_session() as session:
+    recurrences = session.query(LPAAuditRecurrence).all()
+    
+    for recurrence in recurrences:
+        question_count = recurrence.question_count
+        dates = reccurrence_value_to_date(recurrence.type, recurrence.value)
+        
+        for date in dates:
+            audit = session.query(LPAAudit).filter(
+                LPAAudit.assigned_layer_id == recurrence.layer_id,
+                LPAAudit.assigned_group_id == recurrence.group_id,
+                LPAAudit.auditor_user_id == recurrence.auditor_id,
+                LPAAudit.due_date == date,
+            )
+            if audit.count() > 0:
+                continue
+
+            audit = LPAAudit(
+                due_date=date,
+                auditor_user_id=recurrence.auditor_id,
+                created_by_user_id=recurrence.auditor_id,
+                assigned_group_id=recurrence.group_id,
+                assigned_layer_id=recurrence.layer_id,
+                recurrent_audit=True,
+            )
+            session.add(audit)
+            session.flush()
+            session.refresh(audit)
+
+            questions = session.query(LPAQuestion).all()
+            rand_questions = random.choices(questions, k=question_count)
+
+            for question in rand_questions:
+                association = AuditQuestionAssociation(
+                    audit_id=audit.id,
+                    question_id=question.id
+                )
+                session.add(association)
+
+            created_audits.append(audit.id)
+
+            session.commit()
+
+print(created_audits)

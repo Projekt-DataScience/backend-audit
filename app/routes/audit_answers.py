@@ -5,7 +5,7 @@ from dao.lpa_answer import LPAAnswerReasonDAO
 from db import dbm
 
 router = APIRouter(
-    prefix="/lpa_answer",
+    prefix="/api/audit/lpa_answer",
     tags=["lpa_answer"],
     responses={404: {"description": "Not found"}},
 )
