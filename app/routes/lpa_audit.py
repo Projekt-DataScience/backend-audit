@@ -88,7 +88,8 @@ def get_audits_of_user(id: int):
             )
 
         audits = audits.filter(
-            LPAAudit.due_date >= datetime.now()
+            LPAAudit.due_date >= datetime.now(),
+            LPAAudit.duration == None
         )
 
         return audits.all()
