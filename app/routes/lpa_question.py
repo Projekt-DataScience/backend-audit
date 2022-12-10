@@ -16,6 +16,11 @@ def get_lpa_questions():
     with dbm.create_session() as session:
         questions = session.query(LPAQuestion).all()
 
+        for question in questions:
+            question.category = session.query(LPAQuestionCategory).get(question.category_id)
+            question.layer = session.query(Layer).get(question.layer_id)
+            question.group = session.query(Group).get(question.group_id)
+
     return questions
 
 @router.get("/{id}")
@@ -24,6 +29,10 @@ def get_lpa_question(id: int):
         question = session.query(LPAQuestion).get(id)
         if question is None:
             raise HTTPException(status_code=404)
+
+        question.category = session.query(LPAQuestionCategory).get(question.category_id)
+        question.layer = session.query(Layer).get(question.layer_id)
+        question.group = session.query(Group).get(question.group_id)
 
     return question
 
