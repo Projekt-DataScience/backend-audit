@@ -7,6 +7,7 @@ from routes.lpa_audit import router as lpa_audit_router
 from routes.audit_answers import router as lpa_answer_router
 from routes.recurrence import router as recurrence_router
 
+
 app = FastAPI()
 app.include_router(lpa_question_category_router)
 app.include_router(lpa_question_router)

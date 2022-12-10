@@ -4,7 +4,29 @@ import random
 
 from datetime import datetime
 
-URL = "http://localhost:8000"
+from backend_db_lib.manager import DatabaseManager
+from backend_db_lib.models import base
+
+env = {}
+with open(".env", "r") as f:
+    lines = f.read().splitlines()
+    for line in lines:
+        print(line)
+        if "=" in line:
+            key, value = line.split("=")
+            env[key] = value.strip()
+
+print(env)
+
+DATABASE_URL = f"postgresql://{env['DB_USER']}:{env['DB_PASSWORD']}@127.0.0.1:{env['DB_PORT']}/{env['DB_NAME']}"
+
+def create_db():
+    db = DatabaseManager(base, DATABASE_URL)
+    db.drop_all()
+    db.create_all()
+    db.create_initial_data()
+
+URL = "http://localhost:8000/api/audit"
 
 def create_question_categories():
     ENDPOINT = "/lpa_question_category/question_category"
@@ -86,6 +108,10 @@ def create_audit(question_ids, n=5):
 
 
 if __name__ == "__main__":
+    print("Creating database...")
+    create_db()
+    print("Database created.")
+
     print("Creating question categories...")
     category_ids = create_question_categories()
     print(category_ids)

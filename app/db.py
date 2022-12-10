@@ -3,7 +3,9 @@ from datetime import datetime, date, timedelta
 from backend_db_lib.models import base
 from backend_db_lib.manager import DatabaseManager
 
-DATABASE_URL = "postgresql://backendgang:backendgang@db:8010/backend"
+from settings import settings
+
+DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOSTNAME}:{settings.DB_PORT}/{settings.DB_NAME}"
 
 dbm = DatabaseManager(base, DATABASE_URL)
 
@@ -253,7 +255,7 @@ def reccurrence_value_to_date(type, value):
             d = d.replace(minute=0)
             d = d.replace(second=0)
             d = d.replace(microsecond=0)
-            
+
             if d >= now:
                 dates.append(d)
 
