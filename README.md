@@ -1,6 +1,6 @@
 # LPA Audit Service
 
-This repository contains the code for the serivce to handle everything related to LPA Audits.
+This repository contains the code for the serivce to handle everything related to LPA Audits. For further information refer to the [wiki](https://github.com/Projekt-DataScience/backend-audit/wiki).
 
 # Getting Started
 This chapter describes how you can get started developping. 
