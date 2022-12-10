@@ -26,7 +26,7 @@ def get_rhytms():
 def get_recurrence_types():
     return RECURRENCE_TYPES.TYPES
 
-@router.get("/generate_audits")
+@router.get("/generate_recurrent_audits")
 def create_recurrent_audits():
     created_audits = []
     with dbm.create_session() as session:
