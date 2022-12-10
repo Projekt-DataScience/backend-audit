@@ -1,3 +1,5 @@
+from datetime import datetime, date, timedelta
+
 from backend_db_lib.models import base
 from backend_db_lib.manager import DatabaseManager
 
@@ -214,3 +216,58 @@ def frontend_recurrence_value_to_backend_recurrence_value(type, values):
                 value += YEARLY_VALUES.DECEMBER
 
     return value
+
+
+def reccurrence_value_to_date(type, value):
+    now = datetime.now()
+    dates = []
+    if type == RECURRENCE_TYPES.WEEKLY:
+        days = backend_to_frontend_recurrence_value(type, value)
+        for day in days:
+            day_to_num = {
+                WEEKLY_TYPES.MONDAY: 0,
+                WEEKLY_TYPES.TUESDAY: 1,
+                WEEKLY_TYPES.WEDNESDAY: 2,
+                WEEKLY_TYPES.THURSDAY: 3,
+                WEEKLY_TYPES.FRIDAY: 4,
+                WEEKLY_TYPES.SATURDAY: 5,
+                WEEKLY_TYPES.SUNDAY: 6,
+            }
+            days_ahead =  day_to_num[day] - now.weekday()
+            if days_ahead <= 0:
+                days_ahead += 7
+
+            d = now + timedelta(days_ahead)
+            d = d.replace(hour=0)
+            d = d.replace(minute=0)
+            d = d.replace(second=0)
+            d = d.replace(microsecond=0)
+            dates.append(d)
+
+    elif type == RECURRENCE_TYPES.MONTHLY:
+        days = backend_to_frontend_recurrence_value(type, value)
+        for day in days:
+            day = int(day)
+            d = now.replace(day=day)
+            d = d.replace(hour=0)
+            d = d.replace(minute=0)
+            d = d.replace(second=0)
+            d = d.replace(microsecond=0)
+            
+            if d >= now:
+                dates.append(d)
+
+    elif type == RECURRENCE_TYPES.YEARLY:
+        months = backend_to_frontend_recurrence_value(type, value)
+        for month in months:
+            m = YEARLY_TYPES.TYPES.index(month) + 1
+            d = now.replace(month=m)
+            d = d.replace(day=1)
+            d = d.replace(hour=0)
+            d = d.replace(minute=0)
+            d = d.replace(second=0)
+            d = d.replace(microsecond=0)
+            if d >= now:
+                dates.append(d)
+
+    return dates
