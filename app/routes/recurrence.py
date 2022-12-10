@@ -3,9 +3,8 @@ import random
 from fastapi import APIRouter, HTTPException
 
 from dao.recurrence import RecurrenceDAO
-from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer, LPAAudit, AuditQuestionAssociation, LPAQuestion, LPAQuestionCategory, LPAAnswerReason, LPAAnswer
-from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, backend_to_frontend_recurrence_value, reccurrence_value_to_date
-
+from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
+from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, backend_to_frontend_recurrence_value
 router = APIRouter(
     prefix="/planned",
     tags=["planned"],
@@ -25,54 +24,6 @@ def get_rhytms():
 @router.get("/types")
 def get_recurrence_types():
     return RECURRENCE_TYPES.TYPES
-
-@router.get("/generate_recurrent_audits")
-def create_recurrent_audits():
-    created_audits = []
-    with dbm.create_session() as session:
-        recurrences = session.query(LPAAuditRecurrence).all()
-        
-        for recurrence in recurrences:
-            question_count = recurrence.question_count
-            dates = reccurrence_value_to_date(recurrence.type, recurrence.value)
-            
-            for date in dates:
-                audit = session.query(LPAAudit).filter(
-                    LPAAudit.assigned_layer_id == recurrence.layer_id,
-                    LPAAudit.assigned_group_id == recurrence.group_id,
-                    LPAAudit.auditor_user_id == recurrence.auditor_id,
-                    LPAAudit.due_date == date,
-                )
-                if audit.count() > 0:
-                    continue
-
-                audit = LPAAudit(
-                    due_date=date,
-                    auditor_user_id=recurrence.auditor_id,
-                    created_by_user_id=recurrence.auditor_id,
-                    assigned_group_id=recurrence.group_id,
-                    assigned_layer_id=recurrence.layer_id,
-                    recurrent_audit=True,
-                )
-                session.add(audit)
-                session.flush()
-                session.refresh(audit)
-
-                questions = session.query(LPAQuestion).all()
-                rand_questions = random.choices(questions, k=question_count)
-
-                for question in rand_questions:
-                    association = AuditQuestionAssociation(
-                        audit_id=audit.id,
-                        question_id=question.id
-                    )
-                    session.add(association)
-
-                created_audits.append(audit.id)
-
-                session.commit()
-
-    return created_audits
 
 @router.get("/values/{type}")
 def get_recurrence_values(type: str):
