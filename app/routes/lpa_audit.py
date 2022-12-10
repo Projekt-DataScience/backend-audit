@@ -34,7 +34,7 @@ def get_all_audits():
 
 
 @router.get("/{id}")
-def get_audit(id: int):
+def get_audit(id: int) -> GetAuditDAO:
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
 
@@ -43,13 +43,16 @@ def get_audit(id: int):
 
     audit_dao = GetAuditDAO()
     audit_dao.id = audit.id
-    audit_dao.due_date = f"{audit.due_date.year}-{audit.due_date.month}-{audit.due_date.day}T{audit.due_date.hour}:{audit.due_date.minute}:{audit.due_date.second}"
+    audit_dao.due_date = convert_audit_due_date(audit.due_date)
     audit_dao.recurrent_audit = audit.recurrent_audit
     audit_dao.created_by_user_id = audit.created_by_user_id
     audit_dao.audited_user_id = audit.audited_user_id
     audit_dao.auditor_user_id = audit.auditor_user_id
     audit_dao.assigned_group_id = audit.assigned_group_id
     audit_dao.assigned_layer_id = audit.assigned_layer_id
+    if audit.complete_datetime is not None:
+        audit_dao.complete_datetime = convert_audit_due_date(
+            audit.complete_datetime)
 
     questions = session.query(AuditQuestionAssociation).filter_by(
         audit_id=audit.id
@@ -91,7 +94,7 @@ def get_audit(id: int):
         durations.append(duration)
     audit_dao.durations = durations
 
-    return questions
+    return audit_dao
 
 
 @router.get("/open/{id}")
@@ -127,7 +130,7 @@ def get_audits_of_user(id: int):
 
 
 @router.post("")
-def create_spontanous_lpa_audit(audit: SpontanousAudit):
+def create_spontanous_lpa_audit(audit: SpontanousAudit) -> CreatedSpontanousAudit:
     with dbm.create_session() as session:
         auditor = session.query(User).get(audit.auditor)
         if auditor is None:
@@ -301,6 +304,7 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int):
             session.add(audit_duration)
 
         audit.duration = duration_complete
+        audit.complete_datetime = datetime.now()
         session.add(audit)
 
         session.flush()

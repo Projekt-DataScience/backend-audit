@@ -8,7 +8,7 @@ class GetAuditDAO(BaseModel):
     duration: int = None
     recurrent_audit: bool = None
     created_by_user_id: int = None
-    audited_user_id: int = None
+    complete_datetime: str = None
     auditor_user_id: int = None
     audited_user_id: int = None
     assigned_group_id: int = None
@@ -60,5 +60,6 @@ class AuditDurationDAO(BaseModel):
 
 
 class CompleteAuditDAO(BaseModel):
+    audited_user_id: int = None
     answers: List[AnswerDAO]
     durations: List[AuditDurationDAO]
