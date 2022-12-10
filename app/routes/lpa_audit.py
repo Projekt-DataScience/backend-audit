@@ -5,7 +5,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, LPAAnswer, LPAAnswerReason
+from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, LPAAnswer, LPAAnswerReason, LPAQuestionCategory
 from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
@@ -22,6 +22,10 @@ router = APIRouter(
 def get_all_audits():
     with dbm.create_session() as session:
         audits = session.query(LPAAudit).all()
+
+        for audit in audits:
+            audit.assigned_group = session.query(Group).get(audit.assigned_group_id)
+            audit.assigned_layer = session.query(Layer).get(audit.assigned_layer_id)
 
     return audits
 
@@ -47,19 +51,38 @@ def get_audit(id: int):
         audit_id = audit.id
     ).all()
     question_ids = [question.id for question in questions]
-    audit_dao.questions = question_ids
+    questions = []
+    for id in question_ids:
+        question = session.query(LPAQuestion).get(id)
+        if question is not None:
+            question.layer = session.query(Layer).get(question.layer_id)
+            question.group = session.query(Group).get(question.group_id)
+            question.category = session.query(LPAQuestionCategory).get(question.category_id)
+            questions.append(question)
+
+    audit_dao.questions = questions
 
     answers = session.query(LPAAnswer).filter_by(
         audit_id = audit.id
     ).all()
     answer_ids = [answer.id for answer in answers]
-    audit_dao.answers = answer_ids
+    answers = []
+    for id in answer_ids:
+        answer = session.query(LPAAnswer).get(id)
+        if answer.lpa_answer_reason_id  is not None:
+            answer.reason = session.query(LPAAnswerReason).get(answer.lpa_answer_reason_id)
+        answers.append(answer)
+    audit_dao.answers = answers
 
     durations = session.query(LPAAuditDuration).filter_by(
         audit_id = audit.id
     ).all()
     duration_ids = [duration.id for duration in durations]
-    audit_dao.durations = duration_ids
+    durations = []
+    for id in duration_ids:
+        duration = session.query(LPAAuditDuration).get(id)
+        durations.append(duration)
+    audit_dao.durations = durations
 
     return audit_dao
 
@@ -226,7 +249,6 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int):
             raise HTTPException(status_code=400, detail="Audit already completed")
 
         #TODO: Add User id to audited user
-        
 
         for answer in complete_audit.answers:
             if answer.answer_reason_id is not None:
@@ -266,7 +288,7 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int):
 
         # Create Response Answer
         response = requests.get(
-            f"{settings.AUDIT_API_URL}/lpa_audit/{audit.id}",
+            f"{settings.AUDIT_API_URL}/api/audit/lpa_audit/{id}",
         )
 
     return response.json()

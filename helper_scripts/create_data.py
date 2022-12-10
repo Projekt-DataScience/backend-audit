@@ -40,7 +40,7 @@ def create_question_categories():
         )
 
         ids.append(response.json()["id"])
-
+ 
     return ids
 
 
