@@ -13,7 +13,7 @@ from db import dbm
 from settings import settings
 
 router = APIRouter(
-    prefix="/lpa_audit",
+    prefix="/api/audit/lpa_audit",
     tags=["lpa_audit"],
     responses={404: {"description": "Not found"}},
 )

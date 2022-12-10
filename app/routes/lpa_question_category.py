@@ -5,7 +5,7 @@ from dao.QuestionCategory import QuestionCategory
 from db import dbm
 
 router = APIRouter(
-    prefix="/lpa_question_category",
+    prefix="/api/audit/lpa_question_category",
     tags=["lpa_question_category"],
     responses={404: {"description": "Not found"}},
 )

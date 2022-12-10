@@ -6,7 +6,7 @@ from dao.recurrence import RecurrenceDAO
 from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
 from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, backend_to_frontend_recurrence_value
 router = APIRouter(
-    prefix="/planned",
+    prefix="/api/audit/planned",
     tags=["planned"],
     responses={404: {"description": "Not found"}},
 )

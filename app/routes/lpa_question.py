@@ -6,7 +6,7 @@ from db import dbm
 
 
 router = APIRouter(
-    prefix="/lpa_question",
+    prefix="/api/audit/lpa_question",
     tags=["lpa_question"],
     responses={404: {"description": "Not found"}},
 )
