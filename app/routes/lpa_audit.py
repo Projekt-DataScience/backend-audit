@@ -1,15 +1,16 @@
 import random
+import requests
 
 from datetime import datetime 
 
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration
-from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO
+from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, LPAAnswer, LPAAnswerReason
+from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
-from helpers.audit_date_parser import parse_audit_due_date
+from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
 from db import dbm
-
+from settings import settings
 
 router = APIRouter(
     prefix="/lpa_audit",
@@ -27,12 +28,40 @@ def get_all_audits():
 @router.get("/{id}")
 def get_audit(id: int):
     with dbm.create_session() as session:
-        audit = session.query(LPAAudit).get(id)
+        audit = session.query(LPAAudit).get(id)    
     
     if audit is None:
         raise HTTPException(status_code=404, detail="Audit not found")
 
-    return audit
+    audit_dao = GetAuditDAO()
+    audit_dao.id = audit.id
+    audit_dao.due_date = f"{audit.due_date.year}-{audit.due_date.month}-{audit.due_date.day}T{audit.due_date.hour}:{audit.due_date.minute}:{audit.due_date.second}"
+    audit_dao.recurrent_audit = audit.recurrent_audit
+    audit_dao.created_by_user_id = audit.created_by_user_id
+    audit_dao.audited_user_id = audit.audited_user_id
+    audit_dao.auditor_user_id = audit.auditor_user_id
+    audit_dao.assigned_group_id = audit.assigned_group_id
+    audit_dao.assigned_layer_id = audit.assigned_layer_id
+
+    questions = session.query(AuditQuestionAssociation).filter_by(
+        audit_id = audit.id
+    ).all()
+    question_ids = [question.id for question in questions]
+    audit_dao.questions = question_ids
+
+    answers = session.query(LPAAnswer).filter_by(
+        audit_id = audit.id
+    ).all()
+    answer_ids = [answer.id for answer in answers]
+    audit_dao.answers = answer_ids
+
+    durations = session.query(LPAAuditDuration).filter_by(
+        audit_id = audit.id
+    ).all()
+    duration_ids = [duration.id for duration in durations]
+    audit_dao.durations = duration_ids
+
+    return audit_dao
 
 @router.get("/open/{id}")
 def get_audits_of_user(id: int):
@@ -184,3 +213,59 @@ def delete_audit(id: int):
         session.commit()
 
     return id
+
+@router.post("/complete/{id}")
+def complete_audit(complete_audit: CompleteAuditDAO, id: int):
+    with dbm.create_session() as session:
+        audit = session.query(LPAAudit).get(id)
+        if audit is None:
+            raise HTTPException(status_code=404, detail="LPA Audit not found")
+
+        if audit.duration is not None:
+            raise HTTPException(status_code=400, detail="Audit already completed")
+
+        #TODO: Add User id to audited user
+        
+
+        for answer in complete_audit.answers:
+            if answer.answer_reason_id is not None:
+                answer_reason = session.query(LPAAnswerReason).get(answer.answer_reason_id)
+                if answer_reason is None:
+                    raise HTTPException(status_code=404, detail=f"Answer reason with ID {answer.answer_reason_id} not found")
+
+            question = session.query(LPAQuestion).get(answer.question_id)
+            if question is None:
+                raise HTTPException(status_code=404, detail=f"Question with ID {answer.question_id} not found")
+
+            audit_answer = LPAAnswer(
+                answer=answer.answer,
+                comment=answer.comment,
+                lpa_answer_reason_id=answer.answer_reason_id,
+                audit_id=audit.id,
+                question_id=answer.question_id,
+            )
+            session.add(audit_answer)
+
+        duration_complete = 0
+        for duration in complete_audit.durations:
+            duration_complete += duration.duration
+            audit_duration = LPAAuditDuration(
+                audit_id=audit.id,
+                context=duration.context,
+                duration=duration.duration,
+            )
+            session.add(audit_duration)
+
+        audit.duration = duration_complete
+        session.add(audit)
+
+        session.flush()
+        session.commit()
+        session.refresh(audit)
+
+        # Create Response Answer
+        response = requests.get(
+            f"{settings.AUDIT_API_URL}/lpa_audit/{audit.id}",
+        )
+
+    return response.json()
