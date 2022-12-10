@@ -1,7 +1,7 @@
 import random
 import requests
 
-from datetime import datetime 
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
@@ -18,22 +18,26 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("")
 def get_all_audits():
     with dbm.create_session() as session:
         audits = session.query(LPAAudit).all()
 
         for audit in audits:
-            audit.assigned_group = session.query(Group).get(audit.assigned_group_id)
-            audit.assigned_layer = session.query(Layer).get(audit.assigned_layer_id)
+            audit.assigned_group = session.query(
+                Group).get(audit.assigned_group_id)
+            audit.assigned_layer = session.query(
+                Layer).get(audit.assigned_layer_id)
 
     return audits
+
 
 @router.get("/{id}")
 def get_audit(id: int):
     with dbm.create_session() as session:
-        audit = session.query(LPAAudit).get(id)    
-    
+        audit = session.query(LPAAudit).get(id)
+
     if audit is None:
         raise HTTPException(status_code=404, detail="Audit not found")
 
@@ -48,34 +52,37 @@ def get_audit(id: int):
     audit_dao.assigned_layer_id = audit.assigned_layer_id
 
     questions = session.query(AuditQuestionAssociation).filter_by(
-        audit_id = audit.id
+        audit_id=audit.id
     ).all()
-    question_ids = [question.id for question in questions]
+    question_ids = [question.question_id for question in questions]
     questions = []
     for id in question_ids:
         question = session.query(LPAQuestion).get(id)
+        questions.append(question)
         if question is not None:
             question.layer = session.query(Layer).get(question.layer_id)
             question.group = session.query(Group).get(question.group_id)
-            question.category = session.query(LPAQuestionCategory).get(question.category_id)
+            question.category = session.query(
+                LPAQuestionCategory).get(question.category_id)
             questions.append(question)
 
     audit_dao.questions = questions
 
     answers = session.query(LPAAnswer).filter_by(
-        audit_id = audit.id
+        audit_id=audit.id
     ).all()
     answer_ids = [answer.id for answer in answers]
     answers = []
     for id in answer_ids:
         answer = session.query(LPAAnswer).get(id)
-        if answer.lpa_answer_reason_id  is not None:
-            answer.reason = session.query(LPAAnswerReason).get(answer.lpa_answer_reason_id)
+        if answer.lpa_answer_reason_id is not None:
+            answer.reason = session.query(LPAAnswerReason).get(
+                answer.lpa_answer_reason_id)
         answers.append(answer)
     audit_dao.answers = answers
 
     durations = session.query(LPAAuditDuration).filter_by(
-        audit_id = audit.id
+        audit_id=audit.id
     ).all()
     duration_ids = [duration.id for duration in durations]
     durations = []
@@ -84,7 +91,8 @@ def get_audit(id: int):
         durations.append(duration)
     audit_dao.durations = durations
 
-    return audit_dao
+    return questions
+
 
 @router.get("/open/{id}")
 def get_audits_of_user(id: int):
@@ -98,16 +106,16 @@ def get_audits_of_user(id: int):
 
         if (layer_id is not None) and (group_id is not None):
             audits = session.query(LPAAudit).filter_by(
-                assigned_group_id = group_id,
-                assigned_layer_id = layer_id,
+                assigned_group_id=group_id,
+                assigned_layer_id=layer_id,
             )
         elif layer_id is None:
             audits = session.query(LPAAudit).filter_by(
-                assigned_group_id = group_id,
+                assigned_group_id=group_id,
             )
         elif group_id is None:
             audits = session.query(LPAAudit).filter_by(
-                assigned_layer_id = layer_id,
+                assigned_layer_id=layer_id,
             )
 
         audits = audits.filter(
@@ -117,8 +125,9 @@ def get_audits_of_user(id: int):
 
         return audits.all()
 
+
 @router.post("")
-def create_spontanous_lpa_audit(audit: SpontanousAudit):   
+def create_spontanous_lpa_audit(audit: SpontanousAudit):
     with dbm.create_session() as session:
         auditor = session.query(User).get(audit.auditor)
         if auditor is None:
@@ -140,10 +149,10 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit):
 
         lpa_audit = LPAAudit(
             due_date=due_date,
-            duration=None, # We have not completted the audit yet
-            recurrent_audit=False, # Because this is spontanously created
+            duration=None,  # We have not completted the audit yet
+            recurrent_audit=False,  # Because this is spontanously created
             created_by_user_id=created_by_user.id,
-            audited_user_id=None, # Not audited yet
+            audited_user_id=None,  # Not audited yet
             auditor_user_id=auditor.id,
             assigned_group_id=assigned_group.id,
             assigned_layer_id=assigned_layer.id,
@@ -171,7 +180,8 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit):
             layer_id=assigned_layer.id,
             group_id=assigned_group.id,
         ).all()
-        random_questions = random.choices(all_questions, k=audit.question_count)
+        random_questions = random.choices(
+            all_questions, k=audit.question_count)
 
         for question in random_questions:
             question_dao = CreatedLPAQuestionDAO(
@@ -189,11 +199,12 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit):
                 question_id=question.id,
             )
             session.add(aq)
-        
+
         session.flush()
         session.commit()
 
     return created_audit
+
 
 @router.post("/{id}")
 def update_audit(audit: UpdateAuditDAO, id):
@@ -226,6 +237,7 @@ def update_audit(audit: UpdateAuditDAO, id):
 
     return a
 
+
 @router.post("/delete/{id}")
 def delete_audit(id: int):
     with dbm.create_session() as session:
@@ -238,6 +250,7 @@ def delete_audit(id: int):
 
     return id
 
+
 @router.post("/complete/{id}")
 def complete_audit(complete_audit: CompleteAuditDAO, id: int):
     with dbm.create_session() as session:
@@ -246,19 +259,27 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int):
             raise HTTPException(status_code=404, detail="LPA Audit not found")
 
         if audit.duration is not None:
-            raise HTTPException(status_code=400, detail="Audit already completed")
+            raise HTTPException(
+                status_code=400, detail="Audit already completed")
 
-        #TODO: Add User id to audited user
+        audited = session.query(User).get(complete_audit.audited_user_id)
+        if audited is None:
+            raise HTTPException(
+                status_code=404, detail="Audited user not found")
+        audit.audited_user_id = audited.id
 
         for answer in complete_audit.answers:
             if answer.answer_reason_id is not None:
-                answer_reason = session.query(LPAAnswerReason).get(answer.answer_reason_id)
+                answer_reason = session.query(
+                    LPAAnswerReason).get(answer.answer_reason_id)
                 if answer_reason is None:
-                    raise HTTPException(status_code=404, detail=f"Answer reason with ID {answer.answer_reason_id} not found")
+                    raise HTTPException(
+                        status_code=404, detail=f"Answer reason with ID {answer.answer_reason_id} not found")
 
             question = session.query(LPAQuestion).get(answer.question_id)
             if question is None:
-                raise HTTPException(status_code=404, detail=f"Question with ID {answer.question_id} not found")
+                raise HTTPException(
+                    status_code=404, detail=f"Question with ID {answer.question_id} not found")
 
             audit_answer = LPAAnswer(
                 answer=answer.answer,
