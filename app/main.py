@@ -8,15 +8,16 @@ from routes.audit_answers import router as lpa_answer_router
 from routes.recurrence import router as recurrence_router
 
 
-app = FastAPI()
+app = FastAPI(docs_url="/api/audit/docs", redoc_url="/api/audit/redoc")
+
 app.include_router(lpa_question_category_router)
 app.include_router(lpa_question_router)
 app.include_router(lpa_audit_router)
 app.include_router(lpa_answer_router)
 app.include_router(recurrence_router)
 
-@app.get("/")
-@app.get("/healthcheck")
+@app.get("/api/audit/")
+@app.get("/api/audit/healthcheck")
 def healthcheck():
     return { "Status": "Up" }
 

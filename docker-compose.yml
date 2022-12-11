@@ -1,16 +1,30 @@
 version: '3.8'
 
 services:
-  web:
+  audit-service:
     build: .
     command: python /app/main.py
     depends_on:
+      user-management-service:
+        condition: service_started
       db:
         condition: service_healthy
     volumes:
       - ./app:/app
     ports:
-      - 8000:8000
+      - ${AUDIT_SERVICE_PORT}:${AUDIT_SERVICE_PORT}
+    networks:
+      - microservice-network
+    env_file:
+      - .env
+
+  user-management-service:
+    image: ghcr.io/projekt-datascience/backend-user-management:release
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - ${USER_MANAGEMENT_SERVICE_PORT}:${USER_MANAGEMENT_SERVICE_PORT}
     networks:
       - microservice-network
     env_file:
