@@ -5,10 +5,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, LPAAnswer, LPAAnswerReason, LPAQuestionCategory
+from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, \
+    LPAAnswer, LPAAnswerReason, LPAQuestionCategory
 from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
+from helpers.audit import fill_audit
 from db import dbm
 from settings import settings
 
@@ -29,6 +31,19 @@ def get_all_audits():
                 Group).get(audit.assigned_group_id)
             audit.assigned_layer = session.query(
                 Layer).get(audit.assigned_layer_id)
+
+    return audits
+
+
+@router.get("/complete")
+def get_all_complete_audits():
+    with dbm.create_session() as session:
+        audits = session.query(LPAAudit).filter(
+            LPAAudit.duration != None
+        ).all()
+
+        for audit in audits:
+            audit = fill_audit(session, audit)
 
     return audits
 
