@@ -59,12 +59,16 @@ def fill_audit(session, audit: LPAAudit) -> LPAAudit:
 
     # Change with query to user management service
     audit.created_by_user = session.query(User).get(audit.created_by_user_id)
+    audit.created_by_user.password_hash = ""
+
     audit.auditor = session.query(User).get(audit.auditor_user_id)
+    audit.auditor.password_hash = ""
+
     if audit.audited_user_id is not None:
         audit.audited_user = session.query(User).get(audit.audited_user_id)
+        audit.audited_user.password_hash = ""
 
     audit.questions = get_questions_of_audit(session, audit.id)
     audit.answers = get_answers_of_audit(session, audit.id)
-    audit.durations = get_durations_of_audit(session, audit.id)
 
     return audit
