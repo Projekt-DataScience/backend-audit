@@ -10,12 +10,14 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/question_category")
 def get_question_categories():
     with dbm.create_session() as session:
         question_categories = session.query(LPAQuestionCategory).all()
 
     return question_categories
+
 
 @router.get("/question_category/{id}")
 def get_question_categories(id):
@@ -25,6 +27,7 @@ def get_question_categories(id):
             raise HTTPException(status_code=404, detail="LPA Question Category not found")
 
     return question_categorie
+
 
 @router.post("/question_category")
 def create_question_category(question_category: QuestionCategory):
@@ -36,6 +39,7 @@ def create_question_category(question_category: QuestionCategory):
         session.refresh(c)
 
     return c
+
 
 @router.post("/question_category/{id}")
 def update_question_category(question_category: QuestionCategory, id):
@@ -49,11 +53,12 @@ def update_question_category(question_category: QuestionCategory, id):
 
     return c
 
+
 @router.post("/question_category/delete/{id}")
 def delete_question_category(id):
     with dbm.create_session() as session:
         c = session.query(LPAQuestionCategory).get(id)
-        
+
         if not c:
             raise HTTPException(status_code=404, detail="LPA Question Category not found")
 

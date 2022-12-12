@@ -10,6 +10,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/reason")
 def get_lpa_answer_reasons():
     with dbm.create_session() as session:
@@ -17,11 +18,12 @@ def get_lpa_answer_reasons():
 
     return answer_reasons
 
+
 @router.post("/reason")
 def create_lpa_answer_reason(answer: LPAAnswerReasonDAO):
     with dbm.create_session() as session:
         answer = LPAAnswerReason(
-            description = answer.description
+            description=answer.description
         )
 
         session.add(answer)
@@ -30,6 +32,7 @@ def create_lpa_answer_reason(answer: LPAAnswerReasonDAO):
         session.refresh(answer)
 
     return answer
+
 
 @router.post("/reason/{id}")
 def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int):
@@ -46,6 +49,7 @@ def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int):
         session.refresh(answer_reason)
 
     return answer_reason
+
 
 @router.post("/reason/delete/{id}")
 def delete_lpa_answer_reason(id: int):

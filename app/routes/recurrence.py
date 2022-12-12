@@ -4,12 +4,15 @@ from fastapi import APIRouter, HTTPException
 
 from dao.recurrence import RecurrenceDAO
 from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
-from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, backend_to_frontend_recurrence_value
+from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, \
+    backend_to_frontend_recurrence_value
+
 router = APIRouter(
     prefix="/api/audit/planned",
     tags=["planned"],
     responses={404: {"description": "Not found"}},
 )
+
 
 @router.get("")
 def get_rhytms():
@@ -21,9 +24,11 @@ def get_rhytms():
 
     return recurrences
 
+
 @router.get("/types")
 def get_recurrence_types():
     return RECURRENCE_TYPES.TYPES
+
 
 @router.get("/values/{type}")
 def get_recurrence_values(type: str):
@@ -31,6 +36,7 @@ def get_recurrence_values(type: str):
         raise HTTPException(status_code=404, detail="Recurrence type is invalid")
 
     return RECURRENCE_TYPES.VALUES[type]
+
 
 @router.get("/{id}")
 def get_rhytm(id: int):
@@ -42,6 +48,7 @@ def get_rhytm(id: int):
     recurrence.values = backend_to_frontend_recurrence_value(recurrence.type, recurrence.value)
 
     return recurrence
+
 
 @router.post("")
 def create_rhytm(recurrence: RecurrenceDAO):
@@ -63,7 +70,7 @@ def create_rhytm(recurrence: RecurrenceDAO):
 
         if recurrence.question_count <= 0:
             raise HTTPException(status_code=400, detail="Question count is invalid")
-        
+
         value = frontend_recurrence_value_to_backend_recurrence_value(
             recurrence.recurrence_type,
             recurrence.values

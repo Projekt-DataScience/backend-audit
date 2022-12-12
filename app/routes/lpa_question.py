@@ -4,12 +4,12 @@ from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group
 from dao.lpa_question import LPAQuestionDAO
 from db import dbm
 
-
 router = APIRouter(
     prefix="/api/audit/lpa_question",
     tags=["lpa_question"],
     responses={404: {"description": "Not found"}},
 )
+
 
 @router.get("/")
 def get_lpa_questions():
@@ -23,6 +23,7 @@ def get_lpa_questions():
 
     return questions
 
+
 @router.get("/{id}")
 def get_lpa_question(id: int):
     with dbm.create_session() as session:
@@ -35,6 +36,7 @@ def get_lpa_question(id: int):
         question.group = session.query(Group).get(question.group_id)
 
     return question
+
 
 @router.post("")
 def create_lpa_question(lpa_question: LPAQuestionDAO):
@@ -65,6 +67,7 @@ def create_lpa_question(lpa_question: LPAQuestionDAO):
         session.refresh(question)
 
     return question
+
 
 @router.post("/{id}")
 def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
@@ -97,6 +100,7 @@ def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
         session.refresh(question)
 
     return question
+
 
 @router.post("/delete/{id}")
 def delete_question(id: int):
