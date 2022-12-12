@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group
+from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group, AuditQuestionAssociation, LPAAudit
 from dao.lpa_question import LPAQuestionDAO
 from db import dbm
 from helpers.lpa_question import fill_question
@@ -21,6 +21,22 @@ def get_lpa_questions():
             fill_question(session, question)
 
     return questions
+
+
+@router.get("/audit/{audit_id}")
+def get_questions_of_audit(audit_id: int):
+    with dbm.create_session() as session:
+        audit = session.query(LPAAudit).get(audit_id)
+        if audit is None:
+            raise HTTPException(404, "Audit not found.")
+
+        result = session.query(AuditQuestionAssociation, LPAQuestion).filter(
+            AuditQuestionAssociation.audit_id == audit_id
+        ).filter(
+            LPAQuestion.id == AuditQuestionAssociation.question_id
+        ).all()
+
+    return [r["LPAQuestion"] for r in result]
 
 
 @router.get("/{id}")
