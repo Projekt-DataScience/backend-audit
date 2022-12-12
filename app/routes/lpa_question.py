@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group
 from dao.lpa_question import LPAQuestionDAO
 from db import dbm
+from helpers.lpa_question import fill_question
 
 router = APIRouter(
     prefix="/api/audit/lpa_question",
@@ -17,9 +18,7 @@ def get_lpa_questions():
         questions = session.query(LPAQuestion).all()
 
         for question in questions:
-            question.category = session.query(LPAQuestionCategory).get(question.category_id)
-            question.layer = session.query(Layer).get(question.layer_id)
-            question.group = session.query(Group).get(question.group_id)
+            fill_question(session, question)
 
     return questions
 
@@ -31,9 +30,7 @@ def get_lpa_question(id: int):
         if question is None:
             raise HTTPException(status_code=404)
 
-        question.category = session.query(LPAQuestionCategory).get(question.category_id)
-        question.layer = session.query(Layer).get(question.layer_id)
-        question.group = session.query(Group).get(question.group_id)
+        question = fill_question(session, question)
 
     return question
 
@@ -65,6 +62,8 @@ def create_lpa_question(lpa_question: LPAQuestionDAO):
         session.flush()
         session.commit()
         session.refresh(question)
+
+        question = fill_question(session, question)
 
     return question
 
@@ -98,6 +97,8 @@ def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
         session.flush()
         session.commit()
         session.refresh(question)
+
+        question = fill_question(session, question)
 
     return question
 
