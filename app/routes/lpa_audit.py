@@ -5,10 +5,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, LPAAnswer, LPAAnswerReason, LPAQuestionCategory
+from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, \
+    LPAAnswer, LPAAnswerReason, LPAQuestionCategory
 from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
+from helpers.audit import fill_audit
 from db import dbm
 from settings import settings
 
@@ -25,76 +27,35 @@ def get_all_audits():
         audits = session.query(LPAAudit).all()
 
         for audit in audits:
-            audit.assigned_group = session.query(
-                Group).get(audit.assigned_group_id)
-            audit.assigned_layer = session.query(
-                Layer).get(audit.assigned_layer_id)
+            fill_audit(session, audit)
+
+    return audits
+
+
+@router.get("/complete")
+def get_all_complete_audits():
+    with dbm.create_session() as session:
+        audits = session.query(LPAAudit).filter(
+            LPAAudit.duration != None
+        ).all()
+
+        for audit in audits:
+            fill_audit(session, audit)
 
     return audits
 
 
 @router.get("/{id}")
-def get_audit(id: int) -> GetAuditDAO:
+def get_audit(id: int):
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
 
-    if audit is None:
-        raise HTTPException(status_code=404, detail="Audit not found")
+        if audit is None:
+            raise HTTPException(status_code=404, detail="Audit not found")
 
-    audit_dao = GetAuditDAO()
-    audit_dao.id = audit.id
-    audit_dao.due_date = convert_audit_due_date(audit.due_date)
-    audit_dao.recurrent_audit = audit.recurrent_audit
-    audit_dao.created_by_user_id = audit.created_by_user_id
-    audit_dao.audited_user_id = audit.audited_user_id
-    audit_dao.auditor_user_id = audit.auditor_user_id
-    audit_dao.assigned_group_id = audit.assigned_group_id
-    audit_dao.assigned_layer_id = audit.assigned_layer_id
-    if audit.complete_datetime is not None:
-        audit_dao.complete_datetime = convert_audit_due_date(
-            audit.complete_datetime)
+        audit = fill_audit(session, audit)
 
-    questions = session.query(AuditQuestionAssociation).filter_by(
-        audit_id=audit.id
-    ).all()
-    question_ids = [question.question_id for question in questions]
-    questions = []
-    for id in question_ids:
-        question = session.query(LPAQuestion).get(id)
-        questions.append(question)
-        if question is not None:
-            question.layer = session.query(Layer).get(question.layer_id)
-            question.group = session.query(Group).get(question.group_id)
-            question.category = session.query(
-                LPAQuestionCategory).get(question.category_id)
-            questions.append(question)
-
-    audit_dao.questions = questions
-
-    answers = session.query(LPAAnswer).filter_by(
-        audit_id=audit.id
-    ).all()
-    answer_ids = [answer.id for answer in answers]
-    answers = []
-    for id in answer_ids:
-        answer = session.query(LPAAnswer).get(id)
-        if answer.lpa_answer_reason_id is not None:
-            answer.reason = session.query(LPAAnswerReason).get(
-                answer.lpa_answer_reason_id)
-        answers.append(answer)
-    audit_dao.answers = answers
-
-    durations = session.query(LPAAuditDuration).filter_by(
-        audit_id=audit.id
-    ).all()
-    duration_ids = [duration.id for duration in durations]
-    durations = []
-    for id in duration_ids:
-        duration = session.query(LPAAuditDuration).get(id)
-        durations.append(duration)
-    audit_dao.durations = durations
-
-    return audit_dao
+    return audit
 
 
 @router.get("/open/{id}")
