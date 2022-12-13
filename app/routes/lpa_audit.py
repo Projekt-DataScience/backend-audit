@@ -48,7 +48,7 @@ def get_all_complete_audits():
     return response_audits
 
 
-@router.get("/{id}", response_model=GetAuditDAO)
+@router.get("/{id}")
 def get_audit(id: int) -> GetAuditDAO:
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
@@ -224,7 +224,7 @@ def delete_audit(id: int):
     return id
 
 
-@router.post("/complete/{id}", response_model=GetAuditDAO)
+@router.post("/complete/{id}")
 def complete_audit(complete_audit: CompleteAuditDAO, id: int):
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
