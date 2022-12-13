@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from backend_db_lib.models import LPAQuestionCategory
-from dao.QuestionCategory import QuestionCategory
+from dao.question_category import QuestionCategory
 from db import dbm
 
 router = APIRouter(
