@@ -1,9 +1,5 @@
-from fastapi.testclient import TestClient
-
 from datetime import datetime, timedelta
-from main import app
-
-client = TestClient(app)
+from main import client
 
 
 def test_get_audits():

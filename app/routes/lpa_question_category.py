@@ -20,11 +20,12 @@ def get_question_categories():
 
 
 @router.get("/question_category/{id}")
-def get_question_categories(id):
+def get_question_category_by_id(id):
     with dbm.create_session() as session:
         question_categorie = session.query(LPAQuestionCategory).get(id)
         if question_categorie is None:
-            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question Category not found")
 
     return question_categorie
 
@@ -60,7 +61,8 @@ def delete_question_category(id):
         c = session.query(LPAQuestionCategory).get(id)
 
         if not c:
-            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question Category not found")
 
         session.delete(c)
         session.commit()

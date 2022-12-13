@@ -17,4 +17,5 @@ def get_user(session, id: int):
     else:
         user = response.json()["data"]
 
+    print(user)
     return user

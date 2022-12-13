@@ -5,6 +5,9 @@ from backend_db_lib.models import AuditQuestionAssociation, LPAQuestion, LPAAnsw
 from backend_db_lib.models import LPAQuestionCategory
 
 from helpers.auth import get_user
+from helpers.audit_date_parser import convert_audit_due_date
+
+from dao.lpa_audit import GetAuditDAO
 
 
 def get_questions_of_audit(session, audit_id: int) -> List[LPAQuestion]:
@@ -50,7 +53,7 @@ def get_durations_of_audit(session, audit_id: int) -> List[LPAAuditDuration]:
     return durations
 
 
-def fill_audit(session, audit: LPAAudit) -> LPAAudit:
+def fill_audit(session, audit: LPAAudit) -> GetAuditDAO:
     """
     Adds assigned group, assigned layer, created by user, auditor, questions, audited user, questions,
     answers and durations to audit object
@@ -58,15 +61,27 @@ def fill_audit(session, audit: LPAAudit) -> LPAAudit:
     :return:
     """
 
-    audit.assigned_group = session.query(Group).get(audit.assigned_group_id)
-    audit.assigned_layer = session.query(Layer).get(audit.assigned_layer_id)
+    response_audit = GetAuditDAO()
+    response_audit.id = audit.id
+    response_audit.due_date = convert_audit_due_date(audit.due_date)
+    if response_audit.complete_datetime is not None:
+        response_audit.complete_datetime = convert_audit_due_date(
+            audit.complete_datetime)
+    response_audit.duration = audit.duration
+    response_audit.recurrent_audit = audit.recurrent_audit
 
-    audit.questions = get_questions_of_audit(session, audit.id)
-    audit.answers = get_answers_of_audit(session, audit.id)
+    response_audit.assigned_group = session.query(
+        Group).get(audit.assigned_group_id)
+    response_audit.assigned_layer = session.query(
+        Layer).get(audit.assigned_layer_id)
 
-    audit.created_by_user = get_user(session, audit.created_by_user_id)
-    audit.auditor = get_user(session, audit.auditor_user_id)
+    response_audit.questions = get_questions_of_audit(session, audit.id)
+    response_audit.answers = get_answers_of_audit(session, audit.id)
+
+    response_audit.created_by_user = get_user(
+        session, audit.created_by_user_id)
+    response_audit.auditor = get_user(session, audit.auditor_user_id)
     if audit.audited_user_id is not None:
-        audit.audited_user = get_user(session, audit.audited_user_id)
+        response_audit.audited_user = get_user(session, audit.audited_user_id)
 
-    return audit
+    return response_audit
