@@ -52,11 +52,14 @@ def get_lpa_question(id: int):
 
 
 @router.post("")
+@router.post("/")
 def create_lpa_question(lpa_question: LPAQuestionDAO):
     with dbm.create_session() as session:
-        category = session.query(LPAQuestionCategory).get(lpa_question.category_id)
+        category = session.query(LPAQuestionCategory).get(
+            lpa_question.category_id)
         if category is None:
-            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question Category not found")
 
         layer = session.query(Layer).get(lpa_question.layer_id)
         if layer is None:
@@ -87,13 +90,16 @@ def create_lpa_question(lpa_question: LPAQuestionDAO):
 @router.post("/{id}")
 def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
     with dbm.create_session() as session:
-        category = session.query(LPAQuestionCategory).get(lpa_question.category_id)
+        category = session.query(LPAQuestionCategory).get(
+            lpa_question.category_id)
         if category is None:
-            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question Category not found")
 
         question = session.query(LPAQuestion).get(id)
         if question is None:
-            raise HTTPException(status_code=404, detail="LPA Question not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question not found")
 
         layer = session.query(Layer).get(lpa_question.layer_id)
         if layer is None:
@@ -124,7 +130,8 @@ def delete_question(id: int):
     with dbm.create_session() as session:
         question = session.query(LPAQuestion).get(id)
         if question is None:
-            raise HTTPException(status_code=404, detail="LPA Question not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question not found")
 
         session.delete(question)
         session.commit()
