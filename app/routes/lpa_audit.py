@@ -48,7 +48,7 @@ def get_all_complete_audits():
 
 
 @router.get("/{id}")
-def get_audit(id: int):
+def get_audit(id: int) -> GetAuditDAO:
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
 

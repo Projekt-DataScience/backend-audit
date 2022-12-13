@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, HTTPException
 
 from backend_db_lib.models import LPAAnswerReason
@@ -12,7 +14,7 @@ router = APIRouter(
 
 
 @router.get("/reason")
-def get_lpa_answer_reasons():
+def get_lpa_answer_reasons() -> List[LPAAnswerReason]:
     with dbm.create_session() as session:
         answer_reasons = session.query(LPAAnswerReason).all()
 
@@ -39,7 +41,8 @@ def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int):
     with dbm.create_session() as session:
         answer_reason = session.query(LPAAnswerReason).get(id)
         if answer_reason is None:
-            raise HTTPException(status_code=404, detail="LPA Answer Reason not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Answer Reason not found")
 
         answer_reason.description = answer.description
 
@@ -56,7 +59,8 @@ def delete_lpa_answer_reason(id: int):
     with dbm.create_session() as session:
         answer_reason = session.query(LPAAnswerReason).get(id)
         if answer_reason is None:
-            raise HTTPException(status_code=404, detail="LPA Answer Reason not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Answer Reason not found")
 
         session.delete(answer_reason)
         session.commit()
