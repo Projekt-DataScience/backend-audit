@@ -19,6 +19,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Creating environment file
+        run: cp env.example .env
+
       - name: Start containers
         run: docker-compose up -d --build
 
