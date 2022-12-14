@@ -3,6 +3,7 @@ venv
 .idea
 app/foo.db
 test.db
+app/foo.db-journal
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,pycharm
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,visualstudiocode,pycharm

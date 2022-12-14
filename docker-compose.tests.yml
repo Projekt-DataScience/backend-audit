@@ -5,10 +5,8 @@ services:
     build: .
     command: python /app/main.py
     depends_on:
-      user-management-service:
-        condition: service_started
-      db:
-        condition: service_healthy
+      - user-management-service
+      - manager
     volumes:
       - ./app:/app
     ports:
@@ -19,8 +17,7 @@ services:
   user-management-service:
     image: ghcr.io/projekt-datascience/backend-user-management:release
     depends_on:
-      db:
-        condition: service_healthy
+      - manager
     ports:
       - ${USER_MANAGEMENT_SERVICE_PORT}:${USER_MANAGEMENT_SERVICE_PORT}
     env_file:
@@ -34,6 +31,10 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
       PGPORT: ${DB_PORT}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    networks:
+      - microservice-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -42,8 +43,5 @@ services:
 
   manager:
     image: ghcr.io/projekt-datascience/manager:release
-    depends_on:
-      db:
-        condition: service_healthy
     env_file:
       - .env
