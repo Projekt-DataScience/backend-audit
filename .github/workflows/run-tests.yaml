@@ -23,11 +23,11 @@ jobs:
         run: cp example.env .env
 
       - name: Start containers
-        run: docker-compose -f docker-compose.tests.yml up -d --build
+        run: docker-compose up -d --build
 
       - name: Run tests
-        run: docker-compose -f docker-compose.tests.yml run audit-service bash -c "pytest -v"
+        run: docker-compose run audit-service bash -c "pytest -v"
 
       - name: Stop containers
         if: always()
-        run: docker-compose -f docker-compose.tests.yml down
+        run: docker-compose down
