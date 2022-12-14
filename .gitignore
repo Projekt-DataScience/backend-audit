@@ -2,6 +2,7 @@ venv
 .env
 .idea
 app/foo.db
+test.db
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,pycharm
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,visualstudiocode,pycharm

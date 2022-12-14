@@ -1,0 +1,30 @@
+# This workflow creates the docker containers
+# and runs tests
+
+name: Runs tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - release
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start containers
+        run: docker-compose up -d --build
+
+      - name: Run tests
+        run: make test
+
+      - name: Stop containers
+        if: always()
+        run: docker-compose down

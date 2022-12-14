@@ -9,7 +9,7 @@ from settings import settings
 
 DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOSTNAME}:{settings.DB_PORT}/{settings.DB_NAME}"
 
-test_database = os.environ.get("TEST_DATABASE")
+test_database = settings.TEST_DATABASE
 if test_database:
     DATABASE_URL = test_database
 
