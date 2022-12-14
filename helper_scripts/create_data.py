@@ -1,3 +1,4 @@
+import os
 import requests
 import string
 import random
@@ -19,6 +20,10 @@ with open(".env", "r") as f:
 print(env)
 
 DATABASE_URL = f"postgresql://{env['DB_USER']}:{env['DB_PASSWORD']}@127.0.0.1:{env['DB_PORT']}/{env['DB_NAME']}"
+
+test_database = os.environ.get("TEST_DATABASE")
+if test_database:
+    DATABASE_URL = test_database
 
 
 def create_db():
