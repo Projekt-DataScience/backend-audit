@@ -1,0 +1,36 @@
+# This workflow creates the docker containers
+# and runs tests
+
+name: Runs tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - release
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Creating environment file
+        run: cp example.env .env
+
+      - name: Start containers
+        run: docker-compose up -d --build
+
+      - name: Waiting until db structure is created
+        run: sleep 5
+
+      - name: Run tests
+        run: docker-compose run audit-service bash -c "pytest -v"
+
+      - name: Stop containers
+        if: always()
+        run: docker-compose down

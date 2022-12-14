@@ -1,3 +1,5 @@
+import os
+
 from datetime import datetime, date, timedelta
 
 from backend_db_lib.models import base
@@ -7,7 +9,18 @@ from settings import settings
 
 DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOSTNAME}:{settings.DB_PORT}/{settings.DB_NAME}"
 
+test_database = settings.TEST_DATABASE
+if test_database:
+    DATABASE_URL = test_database
+
 dbm = DatabaseManager(base, DATABASE_URL)
+
+if test_database:
+    # Automaticly create talbes for tests
+    dbm.drop_all()
+    dbm.create_all()
+    dbm.create_initial_data()
+
 
 class WEEKLY_TYPES:
     MONDAY = "monday"
@@ -19,6 +32,7 @@ class WEEKLY_TYPES:
     SUNDAY = "sunday"
 
     TYPES = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+
 
 class YEARLY_TYPES:
     JANUARY = "january"
@@ -34,19 +48,22 @@ class YEARLY_TYPES:
     NOVEMBER = "november"
     DECEMBER = "december"
 
-    TYPES = [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER]
+    TYPES = [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE,
+             JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER]
+
 
 class RECURRENCE_TYPES:
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     YEARLY = "yearly"
-        
+
     TYPES = [WEEKLY, MONTHLY, YEARLY]
     VALUES = {
         WEEKLY: WEEKLY_TYPES.TYPES,
         MONTHLY: [str(i) for i in range(1, 32)],
         YEARLY: YEARLY_TYPES.TYPES
     }
+
 
 class WEEKLY_VALUES:
     MONDAY = 0b0000001
@@ -58,6 +75,7 @@ class WEEKLY_VALUES:
     SUNDAY = 0b1000000
 
     VALUES = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+
 
 class YEARLY_VALUES:
     JANUARY = 0b000000000001
@@ -73,7 +91,9 @@ class YEARLY_VALUES:
     NOVEMBER = 0b010000000000
     DECEMBER = 0b100000000000
 
-    VALUES = [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER]
+    VALUES = [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE,
+              JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER]
+
 
 MONTH_VALUES = [
     0b0000000000000000000000000000001,
@@ -108,6 +128,7 @@ MONTH_VALUES = [
     0b0100000000000000000000000000000,
     0b1000000000000000000000000000000,
 ]
+
 
 def backend_to_frontend_recurrence_value(type, value):
     if type == RECURRENCE_TYPES.WEEKLY:
@@ -235,7 +256,7 @@ def reccurrence_value_to_date(type, value):
                 WEEKLY_TYPES.SATURDAY: 5,
                 WEEKLY_TYPES.SUNDAY: 6,
             }
-            days_ahead =  day_to_num[day] - now.weekday()
+            days_ahead = day_to_num[day] - now.weekday()
             if days_ahead <= 0:
                 days_ahead += 7
 

@@ -5,17 +5,18 @@ from pydantic import BaseModel
 class GetAuditDAO(BaseModel):
     id: int = None
     due_date: str = None
+    complete_datetime: str = None
     duration: int = None
     recurrent_audit: bool = None
-    created_by_user_id: int = None
-    complete_datetime: str = None
-    auditor_user_id: int = None
-    audited_user_id: int = None
-    assigned_group_id: int = None
-    assigned_layer_id: int = None
+
+    created_by_user: dict = None
+    audited_user: dict = None
+    auditor: dict = None
+    assigned_group: dict = None
+    assigned_layer: dict = None
+
     questions: List = None
     answers: List = None
-    durations: List = None
 
 
 class SpontanousAudit(BaseModel):

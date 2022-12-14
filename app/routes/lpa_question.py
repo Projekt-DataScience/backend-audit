@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 
-from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group
+from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group, AuditQuestionAssociation, LPAAudit
 from dao.lpa_question import LPAQuestionDAO
 from db import dbm
+from helpers.lpa_question import fill_question
 
 router = APIRouter(
     prefix="/api/audit/lpa_question",
@@ -17,11 +18,25 @@ def get_lpa_questions():
         questions = session.query(LPAQuestion).all()
 
         for question in questions:
-            question.category = session.query(LPAQuestionCategory).get(question.category_id)
-            question.layer = session.query(Layer).get(question.layer_id)
-            question.group = session.query(Group).get(question.group_id)
+            fill_question(session, question)
 
     return questions
+
+
+@router.get("/audit/{audit_id}")
+def get_questions_of_audit(audit_id: int):
+    with dbm.create_session() as session:
+        audit = session.query(LPAAudit).get(audit_id)
+        if audit is None:
+            raise HTTPException(404, "Audit not found.")
+
+        result = session.query(AuditQuestionAssociation, LPAQuestion).filter(
+            AuditQuestionAssociation.audit_id == audit_id
+        ).filter(
+            LPAQuestion.id == AuditQuestionAssociation.question_id
+        ).all()
+
+    return [r["LPAQuestion"] for r in result]
 
 
 @router.get("/{id}")
@@ -31,19 +46,20 @@ def get_lpa_question(id: int):
         if question is None:
             raise HTTPException(status_code=404)
 
-        question.category = session.query(LPAQuestionCategory).get(question.category_id)
-        question.layer = session.query(Layer).get(question.layer_id)
-        question.group = session.query(Group).get(question.group_id)
+        question = fill_question(session, question)
 
     return question
 
 
 @router.post("")
+@router.post("/")
 def create_lpa_question(lpa_question: LPAQuestionDAO):
     with dbm.create_session() as session:
-        category = session.query(LPAQuestionCategory).get(lpa_question.category_id)
+        category = session.query(LPAQuestionCategory).get(
+            lpa_question.category_id)
         if category is None:
-            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question Category not found")
 
         layer = session.query(Layer).get(lpa_question.layer_id)
         if layer is None:
@@ -66,19 +82,24 @@ def create_lpa_question(lpa_question: LPAQuestionDAO):
         session.commit()
         session.refresh(question)
 
+        question = fill_question(session, question)
+
     return question
 
 
 @router.post("/{id}")
 def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
     with dbm.create_session() as session:
-        category = session.query(LPAQuestionCategory).get(lpa_question.category_id)
+        category = session.query(LPAQuestionCategory).get(
+            lpa_question.category_id)
         if category is None:
-            raise HTTPException(status_code=404, detail="LPA Question Category not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question Category not found")
 
         question = session.query(LPAQuestion).get(id)
         if question is None:
-            raise HTTPException(status_code=404, detail="LPA Question not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question not found")
 
         layer = session.query(Layer).get(lpa_question.layer_id)
         if layer is None:
@@ -99,6 +120,8 @@ def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
         session.commit()
         session.refresh(question)
 
+        question = fill_question(session, question)
+
     return question
 
 
@@ -107,7 +130,8 @@ def delete_question(id: int):
     with dbm.create_session() as session:
         question = session.query(LPAQuestion).get(id)
         if question is None:
-            raise HTTPException(status_code=404, detail="LPA Question not found")
+            raise HTTPException(
+                status_code=404, detail="LPA Question not found")
 
         session.delete(question)
         session.commit()

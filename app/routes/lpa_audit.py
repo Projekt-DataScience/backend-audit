@@ -1,4 +1,5 @@
 import random
+from typing import List
 import requests
 
 from datetime import datetime
@@ -26,10 +27,11 @@ def get_all_audits():
     with dbm.create_session() as session:
         audits = session.query(LPAAudit).all()
 
+        response_audits = []
         for audit in audits:
-            fill_audit(session, audit)
+            response_audits.append(fill_audit(session, audit))
 
-    return audits
+    return response_audits
 
 
 @router.get("/complete")
@@ -39,23 +41,24 @@ def get_all_complete_audits():
             LPAAudit.duration != None
         ).all()
 
+        response_audits = []
         for audit in audits:
-            fill_audit(session, audit)
+            response_audits.append(fill_audit(session, audit))
 
-    return audits
+    return response_audits
 
 
 @router.get("/{id}")
-def get_audit(id: int):
+def get_audit(id: int) -> GetAuditDAO:
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
 
         if audit is None:
             raise HTTPException(status_code=404, detail="Audit not found")
 
-        audit = fill_audit(session, audit)
+        response_audit = fill_audit(session, audit)
 
-    return audit
+    return response_audit
 
 
 @router.get("/open/{id}")
@@ -144,8 +147,14 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit) -> CreatedSpontanousAudi
             layer_id=assigned_layer.id,
             group_id=assigned_group.id,
         ).all()
-        random_questions = random.choices(
-            all_questions, k=audit.question_count)
+
+        unique = False
+        while not unique:
+            random_questions = random.choices(
+                all_questions, k=audit.question_count)
+
+            question_titles = [q.question for q in random_questions]
+            unique = len(question_titles) == len(set(question_titles))
 
         for question in random_questions:
             question_dao = CreatedLPAQuestionDAO(
