@@ -43,7 +43,9 @@ def get_all_complete_audits():
 
         response_audits = []
         for audit in audits:
-            response_audits.append(fill_audit(session, audit))
+            filled_audit = fill_audit(session, audit)
+            if len(filled_audit.answers) > 0:
+                response_audits.append(filled_audit)
 
     return response_audits
 
