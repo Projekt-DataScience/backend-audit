@@ -9,6 +9,7 @@ from routes.lpa_question import router as lpa_question_router
 from routes.lpa_audit import router as lpa_audit_router
 from routes.audit_answers import router as lpa_answer_router
 from routes.recurrence import router as recurrence_router
+from routes.analytics import router as analytics_router
 
 app = FastAPI(docs_url="/api/audit/docs", redoc_url="/api/audit/redoc",
               openapi_url="/api/audit/openapi.json")
@@ -26,6 +27,7 @@ app.include_router(lpa_question_router)
 app.include_router(lpa_audit_router)
 app.include_router(lpa_answer_router)
 app.include_router(recurrence_router)
+app.include_router(analytics_router)
 
 client = TestClient(app)
 

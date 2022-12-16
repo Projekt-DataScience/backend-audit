@@ -102,3 +102,29 @@ def test_create_and_delete_lpa_question():
 
     response = client.get("/api/audit/lpa_question/" + str(id), headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 404
+
+def test_get_answers_to_question():
+    token = login()
+
+    question_id = 28
+    response = client.get(
+        f"/api/audit/lpa_question/answers/{question_id}?last=10",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), dict)
+    assert response.json().get("green") is not None
+    assert response.json().get("yellow") is not None
+    assert response.json().get("red") is not None
+    assert len(response.json().get("red")) > 0
+
+    for r in response.json().get("red"):
+        assert r["question_id"] == question_id
+        assert r["answer"] == "red"
+        assert isinstance(r["comment"], str)
+
+    for r in response.json().get("red"):
+        assert r["question_id"] == question_id
+        assert r["answer"] == "red"
+        assert isinstance(r["comment"], str)
