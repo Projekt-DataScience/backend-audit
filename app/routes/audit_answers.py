@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Union
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 
 from backend_db_lib.models import LPAAnswerReason
 from dao.lpa_answer import LPAAnswerReasonDAO
 from db import dbm
+from helpers.auth import validate_authorization
 
 router = APIRouter(
     prefix="/api/audit/lpa_answer",
@@ -14,7 +15,8 @@ router = APIRouter(
 
 
 @router.get("/reason")
-def get_lpa_answer_reasons() -> List[LPAAnswerReason]:
+def get_lpa_answer_reasons(authorization: Union[str, None] = Header(default=None)) -> List[LPAAnswerReason]:
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         answer_reasons = session.query(LPAAnswerReason).all()
 
@@ -22,7 +24,8 @@ def get_lpa_answer_reasons() -> List[LPAAnswerReason]:
 
 
 @router.post("/reason")
-def create_lpa_answer_reason(answer: LPAAnswerReasonDAO):
+def create_lpa_answer_reason(answer: LPAAnswerReasonDAO, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         answer = LPAAnswerReason(
             description=answer.description
@@ -37,7 +40,8 @@ def create_lpa_answer_reason(answer: LPAAnswerReasonDAO):
 
 
 @router.post("/reason/{id}")
-def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int):
+def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         answer_reason = session.query(LPAAnswerReason).get(id)
         if answer_reason is None:
@@ -55,7 +59,8 @@ def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int):
 
 
 @router.post("/reason/delete/{id}")
-def delete_lpa_answer_reason(id: int):
+def delete_lpa_answer_reason(id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         answer_reason = session.query(LPAAnswerReason).get(id)
         if answer_reason is None:

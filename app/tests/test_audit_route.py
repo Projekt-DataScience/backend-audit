@@ -1,32 +1,38 @@
 from datetime import datetime, timedelta
 from main import client
+from helpers.auth import login
 
 
 def test_get_audits():
-    response = client.get("/api/audit/lpa_audit")
+    token = login()
+    response = client.get("/api/audit/lpa_audit", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 def test_get_audit_by_id():
-    response = client.get("/api/audit/lpa_audit/1")
+    token = login()
+    response = client.get("/api/audit/lpa_audit/1", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert isinstance(response.json(), dict)
     assert response.json().get("id") == 1
 
 
 def test_get_audit_by_id_not_found():
-    response = client.get("/api/audit/lpa_audit/999999999")
+    token = login()
+    response = client.get("/api/audit/lpa_audit/999999999", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 404
 
 
 def test_complete_audits():
-    response = client.get("/api/audit/lpa_audit/complete")
+    token = login()
+    response = client.get("/api/audit/lpa_audit/complete", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 def test_create_and_delete_spontanous_audit():
+    token = login()
     date = datetime.now() + timedelta(days=10)
 
     data = {
@@ -36,7 +42,7 @@ def test_create_and_delete_spontanous_audit():
         "assigned_layer": 1,
         "question_count": 3,
     }
-    response = client.post("/api/audit/lpa_audit", json=data)
+    response = client.post("/api/audit/lpa_audit", json=data, headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
 
@@ -59,15 +65,16 @@ def test_create_and_delete_spontanous_audit():
 
     id = response.get("id")
 
-    response = client.post(f"/api/audit/lpa_audit/delete/{id}")
+    response = client.post(f"/api/audit/lpa_audit/delete/{id}", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
 
     # Checking if deleted
-    response = client.get(f"/api/audit/lpa_audit/{id}")
+    response = client.get(f"/api/audit/lpa_audit/{id}", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 404
 
 
 def test_get_open_audits_of_user():
+    token = login()
     date = datetime.now() + timedelta(days=10)
 
     data = {
@@ -77,17 +84,18 @@ def test_get_open_audits_of_user():
         "assigned_layer": 1,
         "question_count": 3,
     }
-    response = client.post("/api/audit/lpa_audit", json=data)
+    response = client.post("/api/audit/lpa_audit", json=data, headers={"Authorization": f"Bearer {token}"})
     id = response.json().get("id")
 
-    response = client.get("/api/audit/lpa_audit/open/1")
+    response = client.get("/api/audit/lpa_audit/open/1", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
-    response = client.post(f"/api/audit/lpa_audit/delete/{id}")
+    response = client.post(f"/api/audit/lpa_audit/delete/{id}", headers={"Authorization": f"Bearer {token}"})
 
 
 def test_get_open_audits_of_user_not_found():
-    response = client.get("/api/audit/lpa_audit/open/999999999")
+    token = login()
+    response = client.get("/api/audit/lpa_audit/open/999999999", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"

@@ -1,8 +1,11 @@
 from main import client
+from helpers.auth import login
 
 
 def test_get_lpa_questions():
-    response = client.get("/api/audit/lpa_question/")
+    token = login()
+
+    response = client.get("/api/audit/lpa_question/", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     assert isinstance(response.json(), list)
@@ -20,7 +23,9 @@ def test_get_lpa_questions():
 
 
 def test_get_lpa_question_by_id():
-    response = client.get("/api/audit/lpa_question/1")
+    token = login()
+
+    response = client.get("/api/audit/lpa_question/1", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     assert isinstance(response.json(), dict)
@@ -35,18 +40,20 @@ def test_get_lpa_question_by_id():
 
 
 def test_lpa_question_by_id_not_found():
-    response = client.get("/api/audit/lpa_question/999999999")
+    token = login()
+    response = client.get("/api/audit/lpa_question/999999999", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 404
 
 
 def test_get_lpa_questions_of_audit():
-    response_audit = client.get("/api/audit/lpa_audit/1")
+    token = login()
+    response_audit = client.get("/api/audit/lpa_audit/1", headers={"Authorization": f"Bearer {token}"})
 
     if response_audit.status_code == 404:
         print("Audit not found, aborting test test_get_lpa_questions_of_audit")
     else:
-        response = client.get("/api/audit/lpa_question/audit/1")
+        response = client.get("/api/audit/lpa_question/audit/1", headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
@@ -55,6 +62,7 @@ def test_get_lpa_questions_of_audit():
 
 
 def test_create_and_delete_lpa_question():
+    token = login()
     data = {
         "question": "test question",
         "description": "test question",
@@ -63,7 +71,7 @@ def test_create_and_delete_lpa_question():
         "group_id": 1
     }
 
-    response = client.post("/api/audit/lpa_question", json=data)
+    response = client.post("/api/audit/lpa_question", json=data, headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     question = response.json()
@@ -76,7 +84,7 @@ def test_create_and_delete_lpa_question():
     assert question.get("group").get("id") == 1
 
     id = response.json().get("id")
-    response = client.get("/api/audit/lpa_question/" + str(id))
+    response = client.get("/api/audit/lpa_question/" + str(id), headers={"Authorization": f"Bearer {token}"})
 
     question = response.json()
     assert response.status_code == 200
@@ -86,11 +94,11 @@ def test_create_and_delete_lpa_question():
     assert question.get("layer").get("id") == 1
     assert question.get("group").get("id") == 1
 
-    response = client.post("/api/audit/lpa_question/", json=data)
+    response = client.post("/api/audit/lpa_question/", json=data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
 
-    response = client.post("/api/audit/lpa_question/delete/" + str(id))
+    response = client.post("/api/audit/lpa_question/delete/" + str(id), headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
 
-    response = client.get("/api/audit/lpa_question/" + str(id))
+    response = client.get("/api/audit/lpa_question/" + str(id), headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 404
