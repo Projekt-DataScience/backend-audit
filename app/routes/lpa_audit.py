@@ -1,13 +1,14 @@
 import random
-from typing import List
+from typing import List, Union
 import requests
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 
 from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, \
     LPAAnswer, LPAAnswerReason, LPAQuestionCategory
+from helpers.auth import validate_authorization
 from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
@@ -23,7 +24,8 @@ router = APIRouter(
 
 
 @router.get("")
-def get_all_audits():
+def get_all_audits(authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audits = session.query(LPAAudit).all()
 
@@ -35,7 +37,8 @@ def get_all_audits():
 
 
 @router.get("/complete")
-def get_all_complete_audits():
+def get_all_complete_audits(authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audits = session.query(LPAAudit).filter(
             LPAAudit.duration != None
@@ -51,7 +54,8 @@ def get_all_complete_audits():
 
 
 @router.get("/{id}")
-def get_audit(id: int) -> GetAuditDAO:
+def get_audit(id: int, authorization: Union[str, None] = Header(default=None)) -> GetAuditDAO:
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
 
@@ -64,7 +68,8 @@ def get_audit(id: int) -> GetAuditDAO:
 
 
 @router.get("/open/{id}")
-def get_audits_of_user(id: int):
+def get_audits_of_user(id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         user = session.query(User).get(id)
         if user is None:
@@ -96,7 +101,8 @@ def get_audits_of_user(id: int):
 
 
 @router.post("")
-def create_spontanous_lpa_audit(audit: SpontanousAudit) -> CreatedSpontanousAudit:
+def create_spontanous_lpa_audit(audit: SpontanousAudit, authorization: Union[str, None] = Header(default=None)) -> CreatedSpontanousAudit:
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         auditor = session.query(User).get(audit.auditor)
         if auditor is None:
@@ -182,7 +188,8 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit) -> CreatedSpontanousAudi
 
 
 @router.post("/{id}")
-def update_audit(audit: UpdateAuditDAO, id):
+def update_audit(audit: UpdateAuditDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         a = session.query(LPAAudit).get(id)
     if a is None:
@@ -214,7 +221,8 @@ def update_audit(audit: UpdateAuditDAO, id):
 
 
 @router.post("/delete/{id}")
-def delete_audit(id: int):
+def delete_audit(id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
         if audit is None:
@@ -227,7 +235,8 @@ def delete_audit(id: int):
 
 
 @router.post("/complete/{id}")
-def complete_audit(complete_audit: CompleteAuditDAO, id: int):
+def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
         if audit is None:
