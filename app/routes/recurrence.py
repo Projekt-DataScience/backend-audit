@@ -1,11 +1,14 @@
+from typing import Union
+
 import random
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 
 from dao.recurrence import RecurrenceDAO
 from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
 from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, \
     backend_to_frontend_recurrence_value
+from helpers.auth import validate_authorization
 
 router = APIRouter(
     prefix="/api/audit/planned",
@@ -15,7 +18,8 @@ router = APIRouter(
 
 
 @router.get("")
-def get_rhytms():
+def get_rhytms(authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         recurrences = session.query(LPAAuditRecurrence).all()
 
@@ -26,12 +30,14 @@ def get_rhytms():
 
 
 @router.get("/types")
-def get_recurrence_types():
+def get_recurrence_types(authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     return RECURRENCE_TYPES.TYPES
 
 
 @router.get("/values/{type}")
-def get_recurrence_values(type: str):
+def get_recurrence_values(type: str, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     if type not in RECURRENCE_TYPES.TYPES:
         raise HTTPException(status_code=404, detail="Recurrence type is invalid")
 
@@ -39,7 +45,8 @@ def get_recurrence_values(type: str):
 
 
 @router.get("/{id}")
-def get_rhytm(id: int):
+def get_rhytm(id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         recurrence = session.query(LPAAuditRecurrence).get(id)
         if recurrence is None:
@@ -51,7 +58,8 @@ def get_rhytm(id: int):
 
 
 @router.post("")
-def create_rhytm(recurrence: RecurrenceDAO):
+def create_rhytm(recurrence: RecurrenceDAO, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         auditor = session.query(User).get(recurrence.auditor_id)
         if auditor is None:
