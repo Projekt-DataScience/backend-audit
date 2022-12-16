@@ -1,6 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 
+from dao.lpa_answer import LPAAnswerDAO
 
 class GetAuditDAO(BaseModel):
     id: int = None
@@ -64,3 +65,8 @@ class CompleteAuditDAO(BaseModel):
     audited_user_id: int = None
     answers: List[AnswerDAO]
     durations: List[AuditDurationDAO]
+
+
+class AuditAnswersDAO(BaseModel):
+    audit_id: int
+    answers: List[LPAAnswerDAO] = []

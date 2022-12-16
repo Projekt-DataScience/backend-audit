@@ -13,11 +13,15 @@ def fill_answer(answer: LPAAnswer) -> LPAAnswerDAO:
     """
     answers = ["green", "yellow", "red"]
 
+    description = ""
+    if answer.lpa_answer_reason is not None:
+        description = answer.lpa_answer_reason.description
+
     return LPAAnswerDAO(
         id=answer.id,
         answer=answers[answer.answer],
         comment=answer.comment,
-        reason=LPAAnswerReasonDAO(description=answer.lpa_answer_reason.description),
+        reason=LPAAnswerReasonDAO(description=description),
         audit_id=answer.audit_id,
         question_id=answer.question_id,
     )
