@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from typing import Union
+
+from fastapi import APIRouter, HTTPException, Header
 
 from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group, AuditQuestionAssociation, LPAAudit
 from dao.lpa_question import LPAQuestionDAO
 from db import dbm
 from helpers.lpa_question import fill_question
+from helpers.auth import validate_authorization
 
 router = APIRouter(
     prefix="/api/audit/lpa_question",
@@ -12,8 +15,10 @@ router = APIRouter(
 )
 
 
+@router.get("")
 @router.get("/")
-def get_lpa_questions():
+def get_lpa_questions(authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         questions = session.query(LPAQuestion).all()
 
@@ -24,7 +29,9 @@ def get_lpa_questions():
 
 
 @router.get("/audit/{audit_id}")
-def get_questions_of_audit(audit_id: int):
+def get_questions_of_audit(audit_id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(audit_id)
         if audit is None:
@@ -40,7 +47,9 @@ def get_questions_of_audit(audit_id: int):
 
 
 @router.get("/{id}")
-def get_lpa_question(id: int):
+def get_lpa_question(id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+
     with dbm.create_session() as session:
         question = session.query(LPAQuestion).get(id)
         if question is None:
@@ -53,7 +62,9 @@ def get_lpa_question(id: int):
 
 @router.post("")
 @router.post("/")
-def create_lpa_question(lpa_question: LPAQuestionDAO):
+def create_lpa_question(lpa_question: LPAQuestionDAO, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+
     with dbm.create_session() as session:
         category = session.query(LPAQuestionCategory).get(
             lpa_question.category_id)
@@ -88,7 +99,9 @@ def create_lpa_question(lpa_question: LPAQuestionDAO):
 
 
 @router.post("/{id}")
-def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
+def update_lpa_question(lpa_question: LPAQuestionDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+
     with dbm.create_session() as session:
         category = session.query(LPAQuestionCategory).get(
             lpa_question.category_id)
@@ -126,7 +139,9 @@ def update_lpa_question(lpa_question: LPAQuestionDAO, id: int):
 
 
 @router.post("/delete/{id}")
-def delete_question(id: int):
+def delete_question(id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+    
     with dbm.create_session() as session:
         question = session.query(LPAQuestion).get(id)
         if question is None:
