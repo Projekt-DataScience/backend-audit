@@ -2,7 +2,7 @@ from main import client
 from helpers.auth import login
 
 def test_get_question_categories():
-    token = login(client)
+    token = login()
 
     response = client.get("/api/audit/lpa_question_category/question_category", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
@@ -14,7 +14,7 @@ def test_get_question_categories():
 
 
 def test_get_question_category_by_id():
-    token = login(client)
+    token = login()
 
     response = client.get(
         "/api/audit/lpa_question_category/question_category/1", headers={"Authorization": f"Bearer {token}"})
@@ -25,7 +25,7 @@ def test_get_question_category_by_id():
 
 
 def test_get_question_category_by_id_not_found():
-    token = login(client)
+    token = login()
     
     response = client.get(
         "/api/audit/lpa_question_category/question_category/999999999", headers={"Authorization": f"Bearer {token}"})
@@ -33,7 +33,7 @@ def test_get_question_category_by_id_not_found():
 
 
 def test_update_question_category():
-    token = login(client)
+    token = login()
 
     response = client.get(
         "/api/audit/lpa_question_category/question_category/1", headers={"Authorization": f"Bearer {token}"})
@@ -52,7 +52,7 @@ def test_update_question_category():
 
 
 def test_create_and_delete_category():
-    token = login(client)
+    token = login()
     
     data = {
         "category_name": "New Category"

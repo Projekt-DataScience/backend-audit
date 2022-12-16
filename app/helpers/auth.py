@@ -48,7 +48,7 @@ def get_user(session, id: int):
     return user
 
 
-def login(client):
+def login():
     """
     Function should only be used for tests
 
