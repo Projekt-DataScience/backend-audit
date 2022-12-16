@@ -106,7 +106,12 @@ def test_create_and_delete_lpa_question():
 def test_get_answers_to_question():
     token = login()
 
-    question_id = 28
+    response = client.get(
+        f"/api/audit/lpa_audit/complete",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    question_id = response.json()[0]["answers"][0]["question_id"]
     response = client.get(
         f"/api/audit/lpa_question/answers/{question_id}?last=10",
         headers={"Authorization": f"Bearer {token}"},
@@ -117,14 +122,16 @@ def test_get_answers_to_question():
     assert response.json().get("green") is not None
     assert response.json().get("yellow") is not None
     assert response.json().get("red") is not None
-    assert len(response.json().get("red")) > 0
 
     for r in response.json().get("red"):
         assert r["question_id"] == question_id
         assert r["answer"] == "red"
         assert isinstance(r["comment"], str)
 
-    for r in response.json().get("red"):
-        assert r["question_id"] == question_id
-        assert r["answer"] == "red"
-        assert isinstance(r["comment"], str)
+    types = ["green", "yellow", "red"]
+
+    for type in types:
+        for r in response.json().get(type):
+            assert r["question_id"] == question_id
+            assert r["answer"] == type
+            assert isinstance(r["comment"], str)
