@@ -303,6 +303,8 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Uni
 
 @router.get("/answers/{id}", response_model=AuditAnswersDAO)
 def get_answers_of_audit(id: int, authorization: Union[str, None] = Header(default=None)) -> AuditAnswersDAO:
+    token = validate_authorization(authorization)
+    
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
         if audit is None:

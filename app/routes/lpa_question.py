@@ -155,7 +155,8 @@ def delete_question(id: int, authorization: Union[str, None] = Header(default=No
     return id
 
 @router.get("/answers/{question_id}", response_model=LPAQuestionAnswersDAO)
-def get_question_answers(question_id: int, last: int) -> LPAQuestionAnswersDAO:
+def get_question_answers(question_id: int, last: int, authorization: Union[str, None] = Header(default=None)) -> LPAQuestionAnswersDAO:
+    payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         green = session.query(LPAAnswer).filter(LPAAnswer.question_id == question_id, LPAAnswer.answer == 0).order_by(LPAAnswer.id.desc()).limit(last).all()
         yellow = session.query(LPAAnswer).filter(LPAAnswer.question_id == question_id, LPAAnswer.answer == 1).order_by(LPAAnswer.id.desc()).limit(last).all()
