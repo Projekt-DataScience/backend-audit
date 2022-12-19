@@ -26,9 +26,9 @@ def validate_jwt(jwt: str):
 
 
 def validate_authorization(authorization: str):
+    print("authorization variable:", authorization)
     if authorization is None:
-        raise HTTPException(
-            status_code=401, detail="Authorization header not found")
+        raise HTTPException(status_code=401, detail="Authorization header not found")
 
     return validate_jwt(authorization)
 

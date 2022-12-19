@@ -237,6 +237,7 @@ def delete_audit(id: int, authorization: Union[str, None] = Header(default=None)
 
 @router.post("/complete/{id}")
 def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+    print(authorization)
     payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
@@ -296,6 +297,7 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Uni
         # Create Response Answer
         response = requests.get(
             f"{settings.AUDIT_API_URL}/api/audit/lpa_audit/{id}",
+            headers={"Authorization": authorization},
         )
 
     return response.json()
