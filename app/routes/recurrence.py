@@ -9,6 +9,7 @@ from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
 from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, \
     backend_to_frontend_recurrence_value
 from helpers.auth import validate_authorization
+from helpers.planned import fill_rhytm
 
 router = APIRouter(
     prefix="/api/audit/planned",
@@ -20,13 +21,15 @@ router = APIRouter(
 @router.get("")
 def get_rhytms(authorization: Union[str, None] = Header(default=None)):
     payload = validate_authorization(authorization)
+    token = authorization.replace("Bearer ", "")
     with dbm.create_session() as session:
         recurrences = session.query(LPAAuditRecurrence).all()
 
-    for recurrence in recurrences:
-        recurrence.values = backend_to_frontend_recurrence_value(recurrence.type, recurrence.value)
+        response_recurrences = []
+        for recurrence in recurrences:
+            response_recurrences.append(fill_rhytm(session, recurrence, token))
 
-    return recurrences
+    return response_recurrences
 
 
 @router.get("/types")
@@ -52,9 +55,9 @@ def get_rhytm(id: int, authorization: Union[str, None] = Header(default=None)):
         if recurrence is None:
             raise HTTPException(status_code=404)
 
-    recurrence.values = backend_to_frontend_recurrence_value(recurrence.type, recurrence.value)
+        recurrence_response = fill_rhytm(session, recurrence, authorization.replace("Bearer ", ""))
 
-    return recurrence
+    return recurrence_response
 
 
 @router.post("")

@@ -48,6 +48,30 @@ def get_user(session, id: int):
     return user
 
 
+def get_group(id: int, token: str):
+    PATH = f"/api/user_management/group/{id}"
+
+    URL = generate_url(PATH)
+    response = requests.get(URL, headers={"Authorization": f"Bearer {token}"})
+    if response.status_code != 200:
+        return None
+    else:
+        return response.json()["data"][0]["group"]
+
+
+def get_layer(id: int, token: str):
+    PATH = f"/api/user_management/layers/"
+
+    URL = generate_url(PATH)
+    response = requests.get(URL, headers={"Authorization": f"Bearer {token}"})
+    if response.status_code != 200:
+        return None
+    else:
+        for layer in response.json()["data"]:
+            if layer["id"] == id:
+                return layer
+    return None
+
 def login():
     """
     Function should only be used for tests
