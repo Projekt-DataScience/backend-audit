@@ -50,14 +50,16 @@ def get_user(session, id: int):
 
 
 def get_group(id: int, token: str):
-    PATH = f"/api/user_management/group/{id}"
+    PATH = f"/api/user_management/groups/"
 
     URL = generate_url(PATH)
     response = requests.get(URL, headers={"Authorization": f"Bearer {token}"})
-    if response.status_code != 200:
-        return None
-    else:
-        return response.json()["data"][0]["group"]
+    if response.status_code == 200:
+        for group in response.json()["data"]:
+            if group["id"] == id:
+                return group
+                
+    return None
 
 
 def get_layer(id: int, token: str):
