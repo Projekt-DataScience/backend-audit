@@ -113,7 +113,7 @@ Finally click the "Save" Button.
 
 ![image](https://user-images.githubusercontent.com/39222224/206866721-1039b401-8bd1-444e-80f9-4c93479d5c3f.png)
 
-16. Now you can start developing with your preferred IDE. If you navigate to http://localhost:8000/docs, you can see a Swagger UI of Audit Service.
+16. Now you can start developing with your preferred IDE. If you navigate to http://localhost:8000/api/audit/docs, you can see a Swagger UI of Audit Service.
 
 ![image](https://user-images.githubusercontent.com/39222224/206866763-ba01d837-e4a5-47e2-b5cc-514224f684a9.png)
 
