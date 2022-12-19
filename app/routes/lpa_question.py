@@ -2,10 +2,11 @@ from typing import Union
 
 from fastapi import APIRouter, HTTPException, Header
 
-from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group, AuditQuestionAssociation, LPAAudit
-from dao.lpa_question import LPAQuestionDAO
+from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group, AuditQuestionAssociation, LPAAudit, LPAAnswer
+from dao.lpa_question import LPAQuestionDAO, LPAQuestionAnswersDAO
 from db import dbm
 from helpers.lpa_question import fill_question
+from helpers.lpa_answer import fill_answer
 from helpers.auth import validate_authorization
 
 router = APIRouter(
@@ -152,3 +153,25 @@ def delete_question(id: int, authorization: Union[str, None] = Header(default=No
         session.commit()
 
     return id
+
+@router.get("/answers/{question_id}", response_model=LPAQuestionAnswersDAO)
+def get_question_answers(question_id: int, last: int, authorization: Union[str, None] = Header(default=None)) -> LPAQuestionAnswersDAO:
+    payload = validate_authorization(authorization)
+    with dbm.create_session() as session:
+        green = session.query(LPAAnswer).filter(LPAAnswer.question_id == question_id, LPAAnswer.answer == 0).order_by(LPAAnswer.id.desc()).limit(last).all()
+        yellow = session.query(LPAAnswer).filter(LPAAnswer.question_id == question_id, LPAAnswer.answer == 1).order_by(LPAAnswer.id.desc()).limit(last).all()
+        red = session.query(LPAAnswer).filter(LPAAnswer.question_id == question_id, LPAAnswer.answer == 2).order_by(LPAAnswer.id.desc()).limit(last).all()
+
+        green_response = []
+        for g in green:
+            green_response.append(fill_answer(g))
+
+        red_response = []
+        for r in red:
+            red_response.append(fill_answer(r))
+
+    return LPAQuestionAnswersDAO(
+        green=green_response,
+        yellow=yellow,
+        red=red_response,
+    )

@@ -14,3 +14,8 @@ class CreatedLPAQuestionDAO(BaseModel):
     category_id: int
     layer_id: int
     group_id: int
+
+class LPAQuestionAnswersDAO(BaseModel):
+    green: list
+    yellow: list
+    red: list

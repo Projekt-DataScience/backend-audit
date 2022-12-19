@@ -99,3 +99,20 @@ def test_get_open_audits_of_user_not_found():
     response = client.get("/api/audit/lpa_audit/open/999999999", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
+
+
+def test_get_answers_of_audit():
+    token = login()
+    response = client.get(
+        "/api/audit/lpa_audit/answers/11",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), dict)
+    assert len(response.json().get("answers")) > 0
+
+    for answer in response.json().get("answers"):
+        assert answer.get("audit_id") is not None
+        assert answer.get("audit_id") == 11
+

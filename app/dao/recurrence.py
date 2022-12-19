@@ -10,3 +10,13 @@ class RecurrenceDAO(BaseModel):
     question_count: int
     recurrence_type: str
     values: List[str]
+
+
+class ResponseRecurrenceDAO(BaseModel):
+    id: int
+    auditor: dict
+    group: dict
+    layer: dict
+    question_count: int
+    recurrence_type: str
+    values: List[str]

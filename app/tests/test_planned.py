@@ -38,11 +38,11 @@ def test_create_and_get_by_id_rhytm():
     response = client.get(f"/api/audit/planned/{id}", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json().get("id") == id
-    assert response.json().get("auditor_id") == 1
-    assert response.json().get("group_id") == 1
-    assert response.json().get("layer_id") == 1
+    assert response.json().get("auditor").get("id") == 1
+    assert response.json().get("group").get("id") == 1
+    assert response.json().get("layer").get("id") == 1
     assert response.json().get("question_count") == 2
-    assert response.json().get("type") == "weekly"
+    assert response.json().get("recurrence_type") == "weekly"
     assert response.json().get("values") == ["monday"]
 
 

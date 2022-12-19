@@ -9,3 +9,5 @@ def fill_question(session, question: LPAQuestion) -> LPAQuestion:
     question.group = session.query(Group).get(question.group_id)
 
     return question
+
+

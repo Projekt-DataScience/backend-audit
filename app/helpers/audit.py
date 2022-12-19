@@ -36,6 +36,8 @@ def get_answers_of_audit(session, audit_id: int) -> List[LPAAnswer]:
         if answer.lpa_answer_reason_id is not None:
             answer.reason = session.query(LPAAnswerReason).get(
                 answer.lpa_answer_reason_id)
+        else:
+            answer.reason = None
         answers.append(answer)
 
     return answers

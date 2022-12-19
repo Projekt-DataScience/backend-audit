@@ -9,10 +9,11 @@ from fastapi import APIRouter, HTTPException, Header
 from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, \
     LPAAnswer, LPAAnswerReason, LPAQuestionCategory
 from helpers.auth import validate_authorization
-from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO
+from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO, AuditAnswersDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
 from helpers.audit import fill_audit
+from helpers.lpa_answer import fill_answer
 from db import dbm
 from settings import settings
 
@@ -236,6 +237,7 @@ def delete_audit(id: int, authorization: Union[str, None] = Header(default=None)
 
 @router.post("/complete/{id}")
 def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+    print(authorization)
     payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
@@ -295,6 +297,31 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Uni
         # Create Response Answer
         response = requests.get(
             f"{settings.AUDIT_API_URL}/api/audit/lpa_audit/{id}",
+            headers={"Authorization": authorization},
         )
 
     return response.json()
+
+
+@router.get("/answers/{id}", response_model=AuditAnswersDAO)
+def get_answers_of_audit(id: int, authorization: Union[str, None] = Header(default=None)) -> AuditAnswersDAO:
+    token = validate_authorization(authorization)
+    
+    with dbm.create_session() as session:
+        audit = session.query(LPAAudit).get(id)
+        if audit is None:
+            raise HTTPException(status_code=404, detail="Audit not found")
+
+        answers = session.query(LPAAnswer).filter_by(
+            audit_id=audit.id).all()
+
+        audit_answers = AuditAnswersDAO(
+            audit_id=audit.id,
+            answers=[],
+        )
+
+        for answer in answers:
+            audit_answer = fill_answer(answer)
+            audit_answers.answers.append(audit_answer)
+
+    return audit_answers
