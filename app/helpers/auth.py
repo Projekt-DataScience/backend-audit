@@ -39,8 +39,9 @@ def get_user(session, id: int):
     URL = generate_url(PATH)
     response = requests.get(URL)
     if response.status_code != 200:
-        user = session.query(User).get(id)
-        user.password_hash = ""
+        #user = session.query(User).get(id)
+        #user.password_hash = ""
+        return None
     else:
         user = response.json()["data"]
 

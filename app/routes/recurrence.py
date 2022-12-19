@@ -8,7 +8,7 @@ from dao.recurrence import RecurrenceDAO
 from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
 from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, \
     backend_to_frontend_recurrence_value
-from helpers.auth import validate_authorization
+from helpers.auth import validate_authorization, get_user
 from helpers.planned import fill_rhytm
 
 router = APIRouter(
@@ -59,6 +59,40 @@ def get_rhytm(id: int, authorization: Union[str, None] = Header(default=None)):
 
     return recurrence_response
 
+@router.get("/user/{user_id}")
+def get_rhytm_by_user_id(user_id: int, authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+
+    recurrence_response = []
+    with dbm.create_session() as session:
+        recurrences = session.query(LPAAuditRecurrence).filter(LPAAuditRecurrence.auditor_id == user_id).all()
+        if recurrences is not None and len(recurrences) > 0:
+            for recurrence in recurrences:
+                recurrence_response.append(fill_rhytm(session, recurrence, authorization.replace("Bearer ", "")))
+        else:
+            user = get_user(session, user_id)
+            group = user.get("group")
+            group_id = None
+            if group:
+                group_id = group.get("id")
+            
+            layer = user.get("layer")
+            layer_id = None
+            if layer:
+                layer_id = layer.get("id")
+
+            if layer_id is not None and group_id is not None:
+                recurrences = session.query(LPAAuditRecurrence).filter(LPAAuditRecurrence.group_id == group_id, LPAAuditRecurrence.layer_id == layer_id).all()
+            elif layer_id is not None:
+                recurrences = session.query(LPAAuditRecurrence).filter(LPAAuditRecurrence.layer_id == layer_id).all()
+            elif group_id is not None:
+                recurrences = session.query(LPAAuditRecurrence).filter(LPAAuditRecurrence.group_id == group_id).all()
+            
+            if recurrences is not None and len(recurrences) > 0:
+                for recurrence in recurrences:
+                    recurrence_response.append(fill_rhytm(session, recurrence, authorization.replace("Bearer ", "")))
+
+    return recurrence_response
 
 @router.post("")
 def create_rhytm(recurrence: RecurrenceDAO, authorization: Union[str, None] = Header(default=None)):
