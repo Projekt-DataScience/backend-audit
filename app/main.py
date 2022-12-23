@@ -11,6 +11,10 @@ from routes.audit_answers import router as lpa_answer_router
 from routes.recurrence import router as recurrence_router
 from routes.analytics import router as analytics_router
 
+
+from settings import settings
+
+
 app = FastAPI(docs_url="/api/audit/docs", redoc_url="/api/audit/redoc",
               openapi_url="/api/audit/openapi.json")
 
@@ -39,4 +43,4 @@ def healthcheck():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=settings.PORT, reload=True)
