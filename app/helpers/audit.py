@@ -6,8 +6,10 @@ from backend_db_lib.models import LPAQuestionCategory
 
 from helpers.auth import get_user
 from helpers.audit_date_parser import convert_audit_due_date
+from helpers.lpa_answer import fill_answer
 
 from dao.lpa_audit import GetAuditDAO
+from dao.lpa_answer import LPAAnswerDAO
 
 
 def get_questions_of_audit(session, audit_id: int) -> List[LPAQuestion]:
@@ -33,12 +35,8 @@ def get_answers_of_audit(session, audit_id: int) -> List[LPAAnswer]:
     answers = []
     for id in answer_ids:
         answer = session.query(LPAAnswer).get(id)
-        if answer.lpa_answer_reason_id is not None:
-            answer.reason = session.query(LPAAnswerReason).get(
-                answer.lpa_answer_reason_id)
-        else:
-            answer.reason = None
-        answers.append(answer)
+        
+        answers.append(fill_answer(answer))
 
     return answers
 

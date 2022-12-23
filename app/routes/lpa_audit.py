@@ -98,7 +98,11 @@ def get_audits_of_user(id: int, authorization: Union[str, None] = Header(default
             LPAAudit.duration == None
         )
 
-        return audits.all()
+        response_audits = []
+        for audit in audits.all():
+            response_audits.append(fill_audit(session, audit))
+
+        return response_audits
 
 
 @router.post("")
