@@ -68,11 +68,11 @@ def get_audit(id: int, authorization: Union[str, None] = Header(default=None)) -
     return response_audit
 
 
-@router.get("/open/{id}")
-def get_audits_of_user(id: int, authorization: Union[str, None] = Header(default=None)):
+@router.get("/open/{user_id}")
+def get_audits_of_user(user_id: int, authorization: Union[str, None] = Header(default=None)):
     payload = validate_authorization(authorization)
     with dbm.create_session() as session:
-        user = session.query(User).get(id)
+        user = session.query(User).get(user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
 
@@ -98,7 +98,11 @@ def get_audits_of_user(id: int, authorization: Union[str, None] = Header(default
             LPAAudit.duration == None
         )
 
-        return audits.all()
+        response_audits = []
+        for audit in audits.all():
+            response_audits.append(fill_audit(session, audit))
+
+        return response_audits
 
 
 @router.post("")
