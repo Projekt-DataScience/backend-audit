@@ -26,6 +26,7 @@ class SpontanousAudit(BaseModel):
     assigned_group: int
     assigned_layer: int
     question_count: int
+    algorithm: Union[str, None]
 
 
 class CreatedSpontanousAudit(BaseModel):
