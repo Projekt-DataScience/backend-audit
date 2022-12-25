@@ -1,15 +1,17 @@
 import datetime
 
-from dateutil.relativedelta import relativedelta
 from typing import List, Union
-from fastapi import APIRouter, Header
-from sqlalchemy import and_
+from fastapi import APIRouter, Header, HTTPException
+from sqlalchemy import and_, or_
+from dateutil.relativedelta import relativedelta
 
 from db import dbm
 from helpers.auth import validate_authorization
 from dao.analytics import SingleGroupAnalytics, AuditAnalytics
 
 from backend_db_lib.models import Group, LPAAudit, LPAAnswer, User
+from helpers.analytics import calculate_audits_analytics
+
 
 router = APIRouter(
     prefix="/api/audit/analytics",
@@ -81,8 +83,46 @@ def get_audit_analytics(authorization: Union[str, None] = Header(default=None)) 
     from_datetime = datetime.datetime.now() - relativedelta(months=6)
 
     with dbm.create_session() as session:
-        # audits = session.query(LPAAudit, User).join(
-        #    User, and_(LPAAudit.created_by_user_id == User.id)).all()
-        audits = session.query(LPAAudit).all()
+        audits = session.query(LPAAudit, User).join(
+            User, and_(LPAAudit.created_by_user_id == User.id))\
+            .filter(User.company_id == company_id)\
+            .filter(
+                LPAAudit.complete_datetime >= from_datetime,
+            ).filter(
+                LPAAudit.complete_datetime <= to_datetime
+            ).all()
 
-    return audits
+        response = calculate_audits_analytics(session, audits)
+
+    return response
+
+
+@router.get("/audits/{user_id}")
+def get_audit_analytics_by_user(user_id: int, authorization: Union[str, None] = Header(default=None)) -> List[AuditAnalytics]:
+    payload = validate_authorization(authorization)
+    
+    to_datetime = datetime.date.today()
+    from_datetime = datetime.datetime.now() - relativedelta(months=6)  
+
+    with dbm.create_session() as session:
+        # Check if authorized
+        user = session.query(User).get(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if user.company_id != payload.get("company_id"):
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+
+        audits = session.query(LPAAudit, User).join(
+            User, and_(LPAAudit.created_by_user_id == User.id))\
+            .filter(or_(LPAAudit.created_by_user_id == user_id, and_(LPAAudit.assigned_group_id == User.group_id, LPAAudit.assigned_layer_id == User.layer_id)))\
+            .filter(
+                LPAAudit.complete_datetime >= from_datetime,
+            ).filter(
+                LPAAudit.complete_datetime <= to_datetime
+            ).all()
+
+        response = calculate_audits_analytics(session, audits)
+
+    return response
