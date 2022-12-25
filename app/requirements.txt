@@ -9,3 +9,5 @@ requests
 httpx
 pytest
 python-dateutil
+numpy
+scikit-learn
