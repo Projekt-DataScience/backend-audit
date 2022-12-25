@@ -170,8 +170,12 @@ def get_question_answers(question_id: int, last: int, authorization: Union[str, 
         for r in red:
             red_response.append(fill_answer(r))
 
+        yellow_response = []
+        for y in yellow:
+            yellow_response.append(fill_answer(y))
+
     return LPAQuestionAnswersDAO(
         green=green_response,
-        yellow=yellow,
+        yellow=yellow_response,
         red=red_response,
     )

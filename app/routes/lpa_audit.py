@@ -12,7 +12,7 @@ from helpers.auth import validate_authorization
 from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO, AuditAnswersDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
-from helpers.audit import fill_audit
+from helpers.audit import fill_audit, choose_questions_for_audit
 from helpers.lpa_answer import fill_answer
 from db import dbm
 from settings import settings
@@ -68,11 +68,11 @@ def get_audit(id: int, authorization: Union[str, None] = Header(default=None)) -
     return response_audit
 
 
-@router.get("/open/{id}")
-def get_audits_of_user(id: int, authorization: Union[str, None] = Header(default=None)):
+@router.get("/open/{user_id}")
+def get_audits_of_user(user_id: int, authorization: Union[str, None] = Header(default=None)):
     payload = validate_authorization(authorization)
     with dbm.create_session() as session:
-        user = session.query(User).get(id)
+        user = session.query(User).get(user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
 
@@ -98,19 +98,24 @@ def get_audits_of_user(id: int, authorization: Union[str, None] = Header(default
             LPAAudit.duration == None
         )
 
-        return audits.all()
+        response_audits = []
+        for audit in audits.all():
+            response_audits.append(fill_audit(session, audit))
+
+        return response_audits
 
 
 @router.post("")
 def create_spontanous_lpa_audit(audit: SpontanousAudit, authorization: Union[str, None] = Header(default=None)) -> CreatedSpontanousAudit:
     payload = validate_authorization(authorization)
+    create_by_user_id = payload["user_id"]
+
     with dbm.create_session() as session:
         auditor = session.query(User).get(audit.auditor)
         if auditor is None:
             raise HTTPException(status_code=404, detail="Auditor not found")
 
-        # TODO: Change created by with current logged in user
-        created_by_user = session.query(User).get(audit.auditor)
+        created_by_user = session.query(User).get(create_by_user_id)
 
         assigned_group = session.query(Group).get(audit.assigned_group)
         if assigned_group is None:
@@ -157,30 +162,12 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit, authorization: Union[str
             group_id=assigned_group.id,
         ).all()
 
-        unique = False
-        while not unique:
-            random_questions = random.choices(
-                all_questions, k=audit.question_count)
+        algorithm = audit.algorithm
+        if algorithm is None:
+            algorithm = "weighted_sum"
 
-            question_titles = [q.question for q in random_questions]
-            unique = len(question_titles) == len(set(question_titles))
-
-        for question in random_questions:
-            question_dao = CreatedLPAQuestionDAO(
-                id=question.id,
-                question=question.question,
-                description=question.description,
-                category_id=question.category_id,
-                layer_id=question.layer_id,
-                group_id=question.group_id,
-            )
-            created_audit.questions.append(question_dao)
-
-            aq = AuditQuestionAssociation(
-                audit_id=lpa_audit.id,
-                question_id=question.id,
-            )
-            session.add(aq)
+        chosen_question = choose_questions_for_audit(session, all_questions, audit.question_count, lpa_audit, algorithm)
+        created_audit.questions.extend(chosen_question)
 
         session.flush()
         session.commit()

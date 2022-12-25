@@ -8,6 +8,7 @@ class Settings:
     DB_HOSTNAME: str = None
     DB_PORT: str = None
     TEST_DATABASE: str = None
+    PORT: int = 0
 
 
 
@@ -18,6 +19,7 @@ settings.DB_NAME = os.environ.get("DB_NAME")
 settings.DB_HOSTNAME = os.environ.get("DB_HOSTNAME")
 settings.DB_PORT = os.environ.get("DB_PORT")
 settings.TEST_DATABASE = os.environ.get("TEST_DATABASE")
+settings.PORT = int(os.environ.get("AUDIT_SERVICE_PORT", 8000))
 
 if settings.DB_USER is None and settings.TEST_DATABASE is None:
     settings.TEST_DATABASE = "sqlite:///test.db"
