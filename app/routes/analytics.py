@@ -15,7 +15,7 @@ from helpers.analytics import calculate_audits_analytics
 
 router = APIRouter(
     prefix="/api/audit/analytics",
-    tags=["lpa_anyltics"],
+    tags=["lpa_analytics"],
     responses={404: {"description": "Not found"}},
 )
 
