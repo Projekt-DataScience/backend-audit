@@ -11,3 +11,8 @@ pytest
 python-dateutil
 numpy
 scikit-learn
+statsmodels
+pandas
+matplotlib
+pmdarima
+jupyterlab
