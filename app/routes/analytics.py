@@ -1,15 +1,16 @@
+from typing import List, Union
 import datetime
 
-from typing import List, Union
 from fastapi import APIRouter, Header, HTTPException
 from sqlalchemy import and_, or_
 from dateutil.relativedelta import relativedelta
 
+from backend_db_lib.models import LPAQuestion, LPAAnswer, LPAAudit, User, Layer, Group
 from db import dbm
 from helpers.auth import validate_authorization
+from helpers.lpa_question import fill_question
 from dao.analytics import SingleGroupAnalytics, AuditAnalytics
 
-from backend_db_lib.models import Group, LPAAudit, LPAAnswer, User
 from helpers.analytics import calculate_audits_analytics
 
 
@@ -19,6 +20,31 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+@router.get("/questions")
+def get_questions_analytics(authorization: Union[str, None] = Header(default=None)):
+    payload = validate_authorization(authorization)
+    usercompany = payload.get("company_id")
+
+    with dbm.create_session() as session:
+        
+        response = []
+
+        allquestions = session.query(LPAQuestion).join(Layer, and_(LPAQuestion.layer_id == Layer.id)).join(Group, and_(LPAQuestion.group_id == Group.id)).filter(or_(Layer.company_id == usercompany, Group.company_id == usercompany)).all()
+        for question in allquestions:
+            green = session.query(LPAAnswer).where(LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 0).count()
+            yellow = session.query(LPAAnswer).where(LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 1).count()
+            red = session.query(LPAAnswer).where(LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 2).count()
+            total = green + yellow + red
+            if total == 0:
+                total = 1
+            percent_green = round(green / total *100, 2)
+            percent_yellow = round(yellow / total * 100, 2)
+            percent_red = round(red / total * 100, 2)
+            response.append({
+            "question": fill_question(session, question), "num_green": green, "num_yellow": yellow, "num_red": red, "percent_green": percent_green, "percent_yellow": percent_yellow, "percent_red": percent_red
+            })
+
+    return response
 
 @router.get("/groups")
 def get_analytics_by_group(authorization: Union[str, None] = Header(default=None)) -> List[SingleGroupAnalytics]:
