@@ -1,6 +1,15 @@
+![GitHub issues](https://img.shields.io/github/issues/Projekt-DataScience/backend-audit) 
+![GitHub pull requests](https://img.shields.io/github/issues-pr/Projekt-DataScience/backend-audit)
+![GitHub milestones](https://img.shields.io/github/milestones/all/Projekt-DataScience/backend-audit)
+
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Projekt-DataScience/backend-audit)
+![GitHub repo file count](https://img.shields.io/github/directory-file-count/Projekt-DataScience/backend-audit)
+
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Projekt-DataScience/backend-audit/create-container.yaml)
+
 # LPA Audit Service
 
-This repository contains the code for the serivce to handle everything related to LPA Audits. For further information refer to the [wiki](https://github.com/Projekt-DataScience/backend-audit/wiki).
+This repository contains the code of Audit Service, which handles everything related to LPA Audits. For further information refer to the [wiki](https://github.com/Projekt-DataScience/backend-audit/wiki).
 
 # Getting Started
 This chapter describes how you can get started developping. 
