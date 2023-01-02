@@ -32,3 +32,8 @@ def test_get_audit_analytics_by_user_id():
 
     # Tests
     assert response.status_code == 200
+
+def test_question_analytics():
+    access_token = login()
+    response = client.get("/api/audit/analytics/questions", headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
