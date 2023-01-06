@@ -20,31 +20,37 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/questions")
 def get_questions_analytics(authorization: Union[str, None] = Header(default=None)):
     payload = validate_authorization(authorization)
     usercompany = payload.get("company_id")
 
     with dbm.create_session() as session:
-        
+
         response = []
 
-        allquestions = session.query(LPAQuestion).join(Layer, and_(LPAQuestion.layer_id == Layer.id)).join(Group, and_(LPAQuestion.group_id == Group.id)).filter(or_(Layer.company_id == usercompany, Group.company_id == usercompany)).all()
+        allquestions = session.query(LPAQuestion).join(Layer, and_(LPAQuestion.layer_id == Layer.id)).join(Group, and_(
+            LPAQuestion.group_id == Group.id)).filter(or_(Layer.company_id == usercompany, Group.company_id == usercompany)).all()
         for question in allquestions:
-            green = session.query(LPAAnswer).where(LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 0).count()
-            yellow = session.query(LPAAnswer).where(LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 1).count()
-            red = session.query(LPAAnswer).where(LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 2).count()
+            green = session.query(LPAAnswer).where(
+                LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 0).count()
+            yellow = session.query(LPAAnswer).where(
+                LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 1).count()
+            red = session.query(LPAAnswer).where(
+                LPAAnswer.question_id == question.id).filter(LPAAnswer.answer == 2).count()
             total = green + yellow + red
             if total == 0:
                 total = 1
-            percent_green = round(green / total *100, 2)
+            percent_green = round(green / total * 100, 2)
             percent_yellow = round(yellow / total * 100, 2)
             percent_red = round(red / total * 100, 2)
             response.append({
-            "question": fill_question(session, question), "num_green": green, "num_yellow": yellow, "num_red": red, "percent_green": percent_green, "percent_yellow": percent_yellow, "percent_red": percent_red
+                "question": fill_question(session, question), "num_green": green, "num_yellow": yellow, "num_red": red, "percent_green": percent_green, "percent_yellow": percent_yellow, "percent_red": percent_red
             })
 
     return response
+
 
 @router.get("/groups")
 def get_analytics_by_group(authorization: Union[str, None] = Header(default=None)) -> List[SingleGroupAnalytics]:
@@ -114,9 +120,9 @@ def get_audit_analytics(authorization: Union[str, None] = Header(default=None)) 
             .filter(User.company_id == company_id)\
             .filter(
                 LPAAudit.complete_datetime >= from_datetime,
-            ).filter(
+        ).filter(
                 LPAAudit.complete_datetime <= to_datetime
-            ).all()
+        ).all()
 
         response = calculate_audits_analytics(session, audits)
 
@@ -126,9 +132,9 @@ def get_audit_analytics(authorization: Union[str, None] = Header(default=None)) 
 @router.get("/audits/{user_id}")
 def get_audit_analytics_by_user(user_id: int, authorization: Union[str, None] = Header(default=None)) -> List[AuditAnalytics]:
     payload = validate_authorization(authorization)
-    
+
     to_datetime = datetime.date.today()
-    from_datetime = datetime.datetime.now() - relativedelta(months=6)  
+    from_datetime = datetime.datetime.now() - relativedelta(months=6)
 
     with dbm.create_session() as session:
         # Check if authorized
@@ -139,15 +145,9 @@ def get_audit_analytics_by_user(user_id: int, authorization: Union[str, None] = 
         if user.company_id != payload.get("company_id"):
             raise HTTPException(status_code=403, detail="Not authorized")
 
-
-        audits = session.query(LPAAudit, User).join(
-            User, and_(LPAAudit.created_by_user_id == User.id))\
-            .filter(or_(LPAAudit.created_by_user_id == user_id, and_(LPAAudit.assigned_group_id == User.group_id, LPAAudit.assigned_layer_id == User.layer_id)))\
-            .filter(
-                LPAAudit.complete_datetime >= from_datetime,
-            ).filter(
-                LPAAudit.complete_datetime <= to_datetime
-            ).all()
+        audits = session.query(LPAAudit)\
+            .filter(or_(LPAAudit.created_by_user_id == user_id, LPAAudit.audited_user_id == user_id, LPAAudit.auditor_user_id == user_id, or_(LPAAudit.assigned_group_id == user.group_id, LPAAudit.assigned_layer_id == user.layer_id)))\
+            .all()
 
         response = calculate_audits_analytics(session, audits)
 
