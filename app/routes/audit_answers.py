@@ -40,7 +40,8 @@ def create_lpa_answer_reason(answer: LPAAnswerReasonDAO, authorization: Union[st
 
 
 @router.post("/reason/{id}")
-def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int, authorization: Union[str, None] = Header(default=None)):
+def update_lpa_answer_reason(answer: LPAAnswerReasonDAO, id: int,
+                             authorization: Union[str, None] = Header(default=None)):
     payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         answer_reason = session.query(LPAAnswerReason).get(id)

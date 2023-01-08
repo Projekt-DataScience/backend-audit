@@ -1,8 +1,8 @@
-fastapi
+fastapi==0.88.0
 uvicorn
 databases[postgresql]
 psycopg2-binary
-sqlalchemy
+sqlalchemy==1.4.46
 passlib
 git+https://github.com/Projekt-DataScience/backend-db-lib@main#egg=backend_db_lib
 requests
