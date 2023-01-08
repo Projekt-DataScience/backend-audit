@@ -104,6 +104,16 @@ def get_audits_of_user(user_id: int, authorization: Union[str, None] = Header(de
 
         return response_audits
 
+@router.post("/test")
+def test_question():
+    with dbm.create_session() as session:
+        all_questions = session.query(LPAQuestion).all()
+        algorithm = "weighted_sum_extended"
+        question_count = 10
+
+        chosen_question = choose_questions_for_audit(session, all_questions, question_count, None, algorithm)
+
+        return(chosen_question)
 
 @router.post("")
 def create_spontanous_lpa_audit(audit: SpontanousAudit, authorization: Union[str, None] = Header(default=None)) -> CreatedSpontanousAudit:

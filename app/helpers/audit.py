@@ -19,6 +19,27 @@ from helpers.lpa_answer import fill_answer
 from dao.lpa_audit import GetAuditDAO
 from dao.lpa_answer import LPAAnswerDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
+from sqlalchemy import func
+import pandas as pd
+from datetime import datetime
+
+factors_weighted_sum = {
+    "global": {
+        "low_mean": .1,
+        "high_variance": .1,
+        "low_answer_count": 0.4,
+    },
+    "layer": {
+        "low_mean": .2,
+        "high_variance": .2,
+        "low_answer_count": .0,
+    },
+    "group": {
+        "low_mean": .0,
+        "high_variance": .0,
+        "low_answer_count": .0,
+    }
+}
 
 
 def get_questions_of_audit(session, audit_id: int) -> List[LPAQuestion]:
@@ -44,7 +65,7 @@ def get_answers_of_audit(session, audit_id: int) -> List[LPAAnswer]:
     answers = []
     for id in answer_ids:
         answer = session.query(LPAAnswer).get(id)
-        
+
         answers.append(fill_answer(answer))
 
     return answers
@@ -96,9 +117,44 @@ def fill_audit(session, audit: LPAAudit) -> GetAuditDAO:
     return response_audit
 
 
-def choose_questions_for_audit(session, questions: List[LPAQuestion], question_count: int, audit: LPAAudit, algorithm: str):
+def handle_scoring(df_answers, scores, factors, possible_answers=[0, 1, 2]):
+    if sum(factors.values()) == .0 or df_answers.shape[0] == 0:
+        return scores  # factors are not used or no elements, don't calculate
+    answer_count = len(possible_answers)
+    max_answer = possible_answers[-1]
+
+    answers_by_question = df_answers.groupby(["question_id"])["answer"]
+
+    if factors["low_mean"] > .0:
+        # low mean
+        low_mean_score = factors["low_mean"] * (1 - answers_by_question.mean() / max_answer)
+        scores = scores.add(low_mean_score, fill_value=.0)
+
+    if factors["high_variance"] > .0:
+        # high var
+        variance = answers_by_question.var().fillna(.0)
+        max_variance = variance.max()
+        if max_variance > .0:
+            variance /= (answer_count / 2)  # normalize to max variance possible
+            scores = scores.add(variance * factors["high_variance"], fill_value=.0)
+
+    if factors["low_answer_count"] > .0:
+        # low count
+        answer_count = answers_by_question.count()
+        max_answer_count = answer_count.max()
+        if max_answer_count > 0:
+            # normalize and scale
+            answer_count_scaled = (1 - (answer_count / max_answer_count)) * factors["low_answer_count"]
+            # add value, if no answers, go with max value
+            scores = scores.add(answer_count_scaled, fill_value=factors["low_answer_count"])
+
+    return scores
+
+
+def choose_questions_for_audit(session, questions: List[LPAQuestion], question_count: int, audit: LPAAudit,
+                               algorithm: str):
     return_questions = []
-    
+
     if algorithm == "random":
         unique = False
         while not unique:
@@ -124,6 +180,68 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
                 question_id=question.id,
             )
             session.add(aq)
+    elif algorithm == "weighted_sum_extended":
+        with dbm.create_session() as session:
+            # get audits that are already completed
+            audits = {x.id: x.__dict__ for x in session.query(LPAAudit).filter(LPAAudit.complete_datetime != None)}
+
+            # combine audits with answers to have one dataframe later
+            df_answers = pd.DataFrame([
+                {
+                    "question_id": x.question_id,
+                    "answer": x.answer,
+                    "complete_datetime": audits[x.audit_id]["complete_datetime"],
+                    "assigned_layer_id": audits[x.audit_id]["assigned_layer_id"],
+                    "assigned_group_id": audits[x.audit_id]["assigned_group_id"],
+                }
+                for x in session.query(LPAAnswer).all() if x.audit_id in audits.keys()
+            ])
+
+            scores = pd.Series({x[0]: .0 for x in session.query(LPAQuestion.id).all()})
+            score_parts = {
+                "global": handle_scoring(df_answers, scores, factors_weighted_sum["global"]),
+                "layer": handle_scoring(df_answers[df_answers['assigned_layer_id'] == audit.assigned_layer_id], scores,
+                                        factors_weighted_sum["layer"]),
+                "group": handle_scoring(df_answers[df_answers['assigned_group_id'] == audit.assigned_group_id], scores,
+                                        factors_weighted_sum["group"]),
+            }
+            scores_overall = pd.DataFrame(score_parts).sum(axis=1)
+
+            # weighted random sample
+            scores_dict = scores_overall.to_dict()
+            if sum(scores_dict.values() > .0):
+                indexes = random.choices(
+                    population=list(scores_dict.keys()),
+                    weights=scores_dict.values(),
+                    k=question_count,
+                )
+            else:
+                indexes = random.choices(
+                    population=list(scores_dict.keys()),
+                    k=question_count,
+                )
+
+            for idx in indexes:
+                question = list(questions)[idx]
+
+                question_dao = CreatedLPAQuestionDAO(
+                    id=question.id,
+                    question=question.question,
+                    description=question.description,
+                    category_id=question.category_id,
+                    layer_id=question.layer_id,
+                    group_id=question.group_id,
+                )
+                return_questions.append(question_dao)
+
+                aq = AuditQuestionAssociation(
+                    audit_id=audit.id,
+                    question_id=question.id,
+                )
+                session.add(aq)
+
+
+
 
     elif algorithm == "weighted_sum":
         question_answers_sum = [0] * len(questions)
@@ -136,15 +254,16 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
             for a in answers:
                 question_answers_sum[i] += a.answer
 
-            question_used_count[i] += session.query(AuditQuestionAssociation).filter(AuditQuestionAssociation.question_id == q.id).count()
+            question_used_count[i] += session.query(AuditQuestionAssociation).filter(
+                AuditQuestionAssociation.question_id == q.id).count()
 
             weighted_sum.append(
-                question_answers_sum[i] * 1 + (1 / question_used_count[i]) * 10 
+                question_answers_sum[i] * 1 + (1 / question_used_count[i]) * 10
             )
 
-        #print(question_answers_sum)
-        #print(question_used_count)
-        #print(weighted_sum)
+        # print(question_answers_sum)
+        # print(question_used_count)
+        # print(weighted_sum)
 
         # Getting the maximum values from weighted sum, to choose which questions should be in the audit
         indexes = []
@@ -153,7 +272,7 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
             indexes.append(max_index)
             weighted_sum[max_index] = -1
 
-        #print(indexes)
+        # print(indexes)
 
         for idx in indexes:
             question = list(questions)[idx]
@@ -188,13 +307,13 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
         index = random.randint(0, len(questions) - 1)
 
         # Picking questions that are not similar to the randomly picked question
-        similarity_score = list( enumerate( similarity[index] ) )
-        sorted_similarity_score = sorted( similarity_score, key=lambda x: x[1], reverse=False )
-        non_similar_questions = sorted_similarity_score[:question_count-1]
+        similarity_score = list(enumerate(similarity[index]))
+        sorted_similarity_score = sorted(similarity_score, key=lambda x: x[1], reverse=False)
+        non_similar_questions = sorted_similarity_score[:question_count - 1]
 
         # getting question indexes 
         indexes = [index]
-        indexes.extend( [i[0] for i in non_similar_questions] )
+        indexes.extend([i[0] for i in non_similar_questions])
 
         print("Indexes:", indexes)
 
