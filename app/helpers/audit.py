@@ -24,21 +24,9 @@ import pandas as pd
 from datetime import datetime
 
 factors_weighted_sum = {
-    "global": {
-        "low_mean": .1,
-        "high_variance": .1,
-        "low_answer_count": 0.4,
-    },
-    "layer": {
-        "low_mean": .2,
-        "high_variance": .2,
-        "low_answer_count": .0,
-    },
-    "group": {
-        "low_mean": .0,
-        "high_variance": .0,
-        "low_answer_count": .0,
-    }
+    "low_mean": .2,
+    "high_variance": .2,
+    "low_answer_count": 0.6,
 }
 
 
@@ -159,7 +147,7 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
         unique = False
         while not unique:
             random_questions = random.choices(
-                questions, k=question_count)
+                list(questions.values()), k=question_count)
 
             question_titles = [q.question for q in random_questions]
             unique = len(question_titles) == len(set(question_titles))
@@ -180,36 +168,30 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
                 question_id=question.id,
             )
             session.add(aq)
-    elif algorithm == "weighted_sum_extended":
-        with dbm.create_session() as session:
-            # get audits that are already completed
-            audits = {x.id: x.__dict__ for x in session.query(LPAAudit).filter(LPAAudit.complete_datetime != None)}
+    elif algorithm == "weighted_sum":
+        # get audits that are already completed
+        audits = {x.id: x.__dict__ for x in session.query(LPAAudit).filter(LPAAudit.complete_datetime != None)}
 
-            # combine audits with answers to have one dataframe later
-            df_answers = pd.DataFrame([
-                {
-                    "question_id": x.question_id,
-                    "answer": x.answer,
-                    "complete_datetime": audits[x.audit_id]["complete_datetime"],
-                    "assigned_layer_id": audits[x.audit_id]["assigned_layer_id"],
-                    "assigned_group_id": audits[x.audit_id]["assigned_group_id"],
-                }
-                for x in session.query(LPAAnswer).all() if x.audit_id in audits.keys()
-            ])
-
-            scores = pd.Series({x[0]: .0 for x in session.query(LPAQuestion.id).all()})
-            score_parts = {
-                "global": handle_scoring(df_answers, scores, factors_weighted_sum["global"]),
-                "layer": handle_scoring(df_answers[df_answers['assigned_layer_id'] == audit.assigned_layer_id], scores,
-                                        factors_weighted_sum["layer"]),
-                "group": handle_scoring(df_answers[df_answers['assigned_group_id'] == audit.assigned_group_id], scores,
-                                        factors_weighted_sum["group"]),
+        # combine audits with answers to have one dataframe later
+        df_answers = pd.DataFrame([
+            {
+                "question_id": x.question_id,
+                "answer": x.answer,
+                "complete_datetime": audits[x.audit_id]["complete_datetime"],
+                "assigned_layer_id": audits[x.audit_id]["assigned_layer_id"],
+                "assigned_group_id": audits[x.audit_id]["assigned_group_id"],
             }
-            scores_overall = pd.DataFrame(score_parts).sum(axis=1)
+            for x in session.query(LPAAnswer).all() if x.audit_id in audits.keys()
+        ])
 
-            # weighted random sample
-            scores_dict = scores_overall.to_dict()
-            if sum(scores_dict.values() > .0):
+        scores = pd.Series({x[0]: .0 for x in session.query(LPAQuestion.id).all()})
+        scores = handle_scoring(df_answers, scores, factors_weighted_sum)
+        # weighted random sample
+        scores_dict = scores.to_dict()
+        results = []
+
+        while len(results) == 0:
+            if sum(scores_dict.values()) > .0:
                 indexes = random.choices(
                     population=list(scores_dict.keys()),
                     weights=scores_dict.values(),
@@ -220,62 +202,11 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
                     population=list(scores_dict.keys()),
                     k=question_count,
                 )
+            if len(indexes) == len(set(indexes)):
+                results = indexes
 
-            for idx in indexes:
-                question = list(questions)[idx]
-
-                question_dao = CreatedLPAQuestionDAO(
-                    id=question.id,
-                    question=question.question,
-                    description=question.description,
-                    category_id=question.category_id,
-                    layer_id=question.layer_id,
-                    group_id=question.group_id,
-                )
-                return_questions.append(question_dao)
-
-                aq = AuditQuestionAssociation(
-                    audit_id=audit.id,
-                    question_id=question.id,
-                )
-                session.add(aq)
-
-
-
-
-    elif algorithm == "weighted_sum":
-        question_answers_sum = [0] * len(questions)
-        question_used_count = [1] * len(questions)
-        weighted_sum = []
-
-        for i, q in enumerate(questions):
-            answers = session.query(LPAAnswer).filter_by(question_id=q.id).all()
-
-            for a in answers:
-                question_answers_sum[i] += a.answer
-
-            question_used_count[i] += session.query(AuditQuestionAssociation).filter(
-                AuditQuestionAssociation.question_id == q.id).count()
-
-            weighted_sum.append(
-                question_answers_sum[i] * 1 + (1 / question_used_count[i]) * 10
-            )
-
-        # print(question_answers_sum)
-        # print(question_used_count)
-        # print(weighted_sum)
-
-        # Getting the maximum values from weighted sum, to choose which questions should be in the audit
-        indexes = []
-        for i in range(question_count):
-            max_index = np.argmax(weighted_sum)
-            indexes.append(max_index)
-            weighted_sum[max_index] = -1
-
-        # print(indexes)
-
-        for idx in indexes:
-            question = list(questions)[idx]
+        for idx in results:
+            question = questions[idx]
 
             question_dao = CreatedLPAQuestionDAO(
                 id=question.id,
@@ -294,7 +225,7 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
             session.add(aq)
 
     elif algorithm == "non_similarity":
-        question_titles = [q.question for q in questions]
+        question_titles = [q.question for q in list(questions.values())]
 
         # Vectorizing question titles for similarity calculation
         vectorizer = TfidfVectorizer()
@@ -304,7 +235,7 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
         similarity = cosine_similarity(feature_vector)
 
         # Randomly picking one question
-        index = random.randint(0, len(questions) - 1)
+        index = random.choices(list(questions.keys()), k=1)[0]
 
         # Picking questions that are not similar to the randomly picked question
         similarity_score = list(enumerate(similarity[index]))
@@ -318,7 +249,7 @@ def choose_questions_for_audit(session, questions: List[LPAQuestion], question_c
         print("Indexes:", indexes)
 
         for i in indexes:
-            question = list(questions)[i]
+            question = list(questions.values())[i]
 
             question_dao = CreatedLPAQuestionDAO(
                 id=question.id,

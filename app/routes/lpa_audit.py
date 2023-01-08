@@ -9,7 +9,8 @@ from fastapi import APIRouter, HTTPException, Header
 from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, \
     LPAAnswer, LPAAnswerReason, LPAQuestionCategory
 from helpers.auth import validate_authorization
-from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO, AuditAnswersDAO
+from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO, \
+    AuditAnswersDAO
 from dao.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
 from helpers.audit import fill_audit, choose_questions_for_audit
@@ -104,19 +105,10 @@ def get_audits_of_user(user_id: int, authorization: Union[str, None] = Header(de
 
         return response_audits
 
-@router.post("/test")
-def test_question():
-    with dbm.create_session() as session:
-        all_questions = session.query(LPAQuestion).all()
-        algorithm = "weighted_sum_extended"
-        question_count = 10
-
-        chosen_question = choose_questions_for_audit(session, all_questions, question_count, None, algorithm)
-
-        return(chosen_question)
 
 @router.post("")
-def create_spontanous_lpa_audit(audit: SpontanousAudit, authorization: Union[str, None] = Header(default=None)) -> CreatedSpontanousAudit:
+def create_spontanous_lpa_audit(audit: SpontanousAudit,
+                                authorization: Union[str, None] = Header(default=None)) -> CreatedSpontanousAudit:
     payload = validate_authorization(authorization)
     create_by_user_id = payload["user_id"]
 
@@ -167,10 +159,10 @@ def create_spontanous_lpa_audit(audit: SpontanousAudit, authorization: Union[str
         created_audit.question_count = audit.question_count
 
         # Choosing random questions for audit
-        all_questions = session.query(LPAQuestion).filter_by(
+        all_questions = {x.id: x for x in session.query(LPAQuestion).filter_by(
             layer_id=assigned_layer.id,
             group_id=assigned_group.id,
-        ).all()
+        ).all()}
 
         algorithm = audit.algorithm
         if algorithm is None:
@@ -303,7 +295,7 @@ def complete_audit(complete_audit: CompleteAuditDAO, id: int, authorization: Uni
 @router.get("/answers/{id}", response_model=AuditAnswersDAO)
 def get_answers_of_audit(id: int, authorization: Union[str, None] = Header(default=None)) -> AuditAnswersDAO:
     token = validate_authorization(authorization)
-    
+
     with dbm.create_session() as session:
         audit = session.query(LPAAudit).get(id)
         if audit is None:
