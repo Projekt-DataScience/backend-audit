@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 @router.get("/reason")
-def get_lpa_answer_reasons(authorization: Union[str, None] = Header(default=None)):
+def get_lpa_answer_reasons(authorization: Union[str, None] = Header(default=None)) -> List[LPAAnswerReason]:
     payload = validate_authorization(authorization)
     with dbm.create_session() as session:
         answer_reasons = session.query(LPAAnswerReason).all()
