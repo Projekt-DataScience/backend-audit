@@ -9,9 +9,9 @@ from fastapi import APIRouter, HTTPException, Header
 from backend_db_lib.models import LPAAudit, User, Group, Layer, LPAQuestion, AuditQuestionAssociation, LPAAuditDuration, \
     LPAAnswer, LPAAnswerReason, LPAQuestionCategory
 from helpers.auth import validate_authorization
-from dao.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO, \
+from dto.lpa_audit import SpontanousAudit, CreatedSpontanousAudit, UpdateAuditDAO, CompleteAuditDAO, GetAuditDAO, \
     AuditAnswersDAO
-from dao.lpa_question import CreatedLPAQuestionDAO
+from dto.lpa_question import CreatedLPAQuestionDAO
 from helpers.audit_date_parser import parse_audit_due_date, convert_audit_due_date
 from helpers.audit import fill_audit, choose_questions_for_audit
 from helpers.lpa_answer import fill_answer

@@ -3,7 +3,7 @@ from typing import List, Union
 from fastapi import APIRouter, HTTPException, Header
 
 from backend_db_lib.models import LPAAnswerReason
-from dao.lpa_answer import LPAAnswerReasonDAO
+from dto.lpa_answer import LPAAnswerReasonDAO
 from db import dbm
 from helpers.auth import validate_authorization
 

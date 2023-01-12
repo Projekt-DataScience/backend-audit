@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from db import dbm
 from backend_db_lib.models import LPAAnswer, LPAAudit
-from dao.analytics import AuditAnalytics
+from dto.analytics import AuditAnalytics
 
 
 def calculate_audits_analytics(session, audits: List[LPAAudit]) -> List[AuditAnalytics]:

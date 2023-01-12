@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from dao.lpa_question import LPAQuestionDAO
+from dto.lpa_question import LPAQuestionDAO
 
 class LPAAnswerReasonDAO(BaseModel):
     description: str

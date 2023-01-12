@@ -1,7 +1,7 @@
 from typing import List, Union
 from pydantic import BaseModel
 
-from dao.lpa_answer import LPAAnswerDAO
+from dto.lpa_answer import LPAAnswerDAO
 
 class GetAuditDAO(BaseModel):
     id: int = None

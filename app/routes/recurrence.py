@@ -4,7 +4,7 @@ import random
 
 from fastapi import APIRouter, HTTPException, Header
 
-from dao.recurrence import RecurrenceDAO
+from dto.recurrence import RecurrenceDAO
 from backend_db_lib.models import LPAAuditRecurrence, User, Group, Layer
 from db import dbm, RECURRENCE_TYPES, frontend_recurrence_value_to_backend_recurrence_value, \
     backend_to_frontend_recurrence_value

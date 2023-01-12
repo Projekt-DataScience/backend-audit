@@ -3,7 +3,7 @@ from typing import Union
 from fastapi import APIRouter, HTTPException, Header
 
 from backend_db_lib.models import LPAQuestionCategory
-from dao.question_category import QuestionCategory
+from dto.question_category import QuestionCategory
 from db import dbm
 from helpers.auth import validate_authorization
 

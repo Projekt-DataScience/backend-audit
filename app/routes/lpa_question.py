@@ -3,7 +3,7 @@ from typing import Union
 from fastapi import APIRouter, HTTPException, Header
 
 from backend_db_lib.models import LPAQuestion, LPAQuestionCategory, Layer, Group, AuditQuestionAssociation, LPAAudit, LPAAnswer
-from dao.lpa_question import LPAQuestionDAO, LPAQuestionAnswersDAO
+from dto.lpa_question import LPAQuestionDAO, LPAQuestionAnswersDAO
 from db import dbm
 from helpers.lpa_question import fill_question
 from helpers.lpa_answer import fill_answer
