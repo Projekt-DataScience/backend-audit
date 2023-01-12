@@ -21,6 +21,12 @@ This repository contains the code of Audit Service, which handles everything rel
 
 ![audit-service-deployment](./.docs/deployment.png)
 
+## Requests
+
+The following UML sequence diagram describes how a request is processed by the audit service:
+
+![audit-request-processing-sequence-diagram](./.docs/request.png)
+
 # Getting Started
 
 This chapter describes how you can get started developping.
