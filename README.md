@@ -1,4 +1,4 @@
-![GitHub issues](https://img.shields.io/github/issues/Projekt-DataScience/backend-audit) 
+![GitHub issues](https://img.shields.io/github/issues/Projekt-DataScience/backend-audit)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/Projekt-DataScience/backend-audit)
 ![GitHub milestones](https://img.shields.io/github/milestones/all/Projekt-DataScience/backend-audit)
 
@@ -12,12 +12,21 @@
 This repository contains the code of Audit Service, which handles everything related to LPA Audits. For further information refer to the [wiki](https://github.com/Projekt-DataScience/backend-audit/wiki).
 
 # Architecture
-![audit-service-architektur](https://user-images.githubusercontent.com/39222224/211392257-65fd2172-0e8e-46ea-b682-1d095a6c0577.png)
+
+## Packages
+
+![audit-service-architektur](./.docs/architecture.png)
+
+## Deployment
+
+![audit-service-deployment](./.docs/deployment.png)
 
 # Getting Started
-This chapter describes how you can get started developping. 
+
+This chapter describes how you can get started developping.
 
 ## Structure
+
 The backend-audit service is implemented in FastAPI. The code can be found under `/app`. That directory also contains the Dockerfile to build a docker image of the service. For convenience, you can also you docker-compose, but the docker-compose file is located in the root of the repository. The base Docker image used, is a Python 3.10 Debian image.
 
 The root directory of repository contains the docker-compose.yml file, which can be used to start the service in a docker container. It also starts dependencies, such as a database server and pgAdmin for a frontend to the database server.
@@ -41,6 +50,7 @@ cd backend-audit
 ```
 https://github.com/Projekt-DataScience/backend-audit.git
 ```
+
 ![image](https://user-images.githubusercontent.com/39222224/206865907-80e9ca63-5c1c-4030-ae04-345a36d39a4c.png)
 
 4. Activate the virtualenv
@@ -62,7 +72,6 @@ cp example.env .env
 ```
 
 ![image](https://user-images.githubusercontent.com/39222224/206866084-14783b37-0d62-4a53-8029-36a3ecb32edf.png)
-
 
 7. OPTIONAL: Open the `.env` file in a editor. You can change everything except for DB_HOSTNAME
 
@@ -108,7 +117,6 @@ After the script has finished, it has created some users, layers, groups, questi
 
 ![image](https://user-images.githubusercontent.com/39222224/206866524-6915c7bd-8c8c-447a-8d04-97ee5886684b.png)
 
-
 14. Specify the Connection details.
 
 - Hostname should be "db"
@@ -128,10 +136,3 @@ Finally click the "Save" Button.
 16. Now you can start developing with your preferred IDE. If you navigate to http://localhost:8000/api/audit/docs, you can see a Swagger UI of Audit Service.
 
 ![image](https://user-images.githubusercontent.com/39222224/206866763-ba01d837-e4a5-47e2-b5cc-514224f684a9.png)
-
-
-
-
-
-
-

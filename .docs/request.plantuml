@@ -1,0 +1,37 @@
+@startuml
+
+skinparam linetype ortho
+skinparam style strictuml
+
+Client -> Routes : Request(): RequestDto
+Routes -> Routes : ValidateJWT(): boolean
+alt ValidateJWT() == true
+
+    Routes -> Routes : UserHasValidPermissions(): boolean
+    alt UserHasValidPermissions() == true
+
+        opt Business Logic
+            Routes -> Helpers: DoBusinessLogic()
+            opt Access Database
+
+            Helpers -> Model: DoDatabaseInteraktion()
+            Helpers <-- Model: OK
+            end
+
+            Routes <-- Helpers: Object
+        end
+
+        Routes -> Routes: CreateResponse(): ResponseDto
+        Client <-- Routes: ResponseDto
+    else 
+        Client <-- Routes: UnauthorizedDto
+    end
+else 
+
+Client <-- Routes : InvalidJWTDto
+
+end
+
+
+
+@enduml

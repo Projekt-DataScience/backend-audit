@@ -1,0 +1,40 @@
+@startuml
+
+skinparam style strictuml
+skinparam linetype ortho
+
+package DTO {
+    [AnalyticsDtos]
+    [LPAAnswersDtos]
+    [LPAAuditDtos]
+    [LPAQuestionDtos]
+    [QuestionCategoryDtos]
+    [RecurrenceDtos]    
+}
+package Routes {
+    [AnalyticsRoutes]
+    [LPAAnswersRoutes]
+    [LPAAuditRoutes]
+    [LPAQuestionRoutes]
+    [QuestionCategoryRoutes]
+    [RecurrenceRoutes]
+}
+package Helpers {
+    [Analytics]
+    [Audit]
+    [AuditDataParser]
+    [Auth]
+    [LPAAnswer]
+    [LPAQuestion]
+    [Planned]
+}
+
+package backend_db_lib as "backend-db-lib" {
+    [Models]
+}
+
+Routes ..> DTO
+Routes ..> Helpers
+Helpers ..> Models
+
+@enduml

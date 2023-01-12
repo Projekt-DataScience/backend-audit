@@ -1,0 +1,25 @@
+@startuml
+
+skinparam linetype ortho
+skinparam style strictuml
+
+actor User
+node api_gateway as "API Gateway"
+
+node audit_server as "Audit Server" {
+    artifact service as "Audit Service" {
+        component app as "FastAPI App"
+        component backend_db_lib as "backend-db-lib"
+
+        app --> backend_db_lib
+    }
+}
+
+database postgres as "PostgreSQL Database"
+
+
+User -- api_gateway
+api_gateway -- audit_server
+backend_db_lib -- postgres
+
+@enduml
