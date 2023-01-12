@@ -16,9 +16,9 @@ from helpers.auth import get_user
 from helpers.audit_date_parser import convert_audit_due_date
 from helpers.lpa_answer import fill_answer
 
-from dao.lpa_audit import GetAuditDAO
-from dao.lpa_answer import LPAAnswerDAO
-from dao.lpa_question import CreatedLPAQuestionDAO
+from dto.lpa_audit import GetAuditDAO
+from dto.lpa_answer import LPAAnswerDAO
+from dto.lpa_question import CreatedLPAQuestionDAO
 from sqlalchemy import func
 import pandas as pd
 from datetime import datetime

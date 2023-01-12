@@ -1,7 +1,7 @@
 from backend_db_lib.models import LPAAuditRecurrence
 from backend_db_lib.recurrence import RecurrenceHelper
 
-from dao.recurrence import ResponseRecurrenceDAO
+from dto.recurrence import ResponseRecurrenceDAO
 from helpers.auth import get_group, get_layer, get_user
 
 def fill_rhytm(session, rhytm: LPAAuditRecurrence, token: str) -> ResponseRecurrenceDAO:

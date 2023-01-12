@@ -1,6 +1,6 @@
 from backend_db_lib.models import LPAAnswer, LPAAnswerReason
 
-from dao.lpa_answer import LPAAnswerDAO, LPAAnswerReasonDAO
+from dto.lpa_answer import LPAAnswerDAO, LPAAnswerReasonDAO
 
 def fill_answer(answer: LPAAnswer) -> LPAAnswerDAO:
     """

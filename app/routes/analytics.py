@@ -9,7 +9,7 @@ from backend_db_lib.models import LPAQuestion, LPAAnswer, LPAAudit, User, Layer,
 from db import dbm
 from helpers.auth import validate_authorization
 from helpers.lpa_question import fill_question
-from dao.analytics import SingleGroupAnalytics, AuditAnalytics
+from dto.analytics import SingleGroupAnalytics, AuditAnalytics
 
 from helpers.analytics import calculate_audits_analytics
 
